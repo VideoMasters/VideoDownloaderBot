@@ -2,6 +2,7 @@ from pyrogram import Client
 from pyrogram import filters
 from bs4 import BeautifulSoup
 import re
+import os
 
 bot = Client('bot', config_file='config.ini')
 
@@ -36,6 +37,12 @@ async def upload(bot, message):
         await message.reply(title)
         for vid in vids_dict:
             video = 'Name: ' + vid + '\n' + 'Link: ' + vids_dict[vid]
+            vid_name = vid+".mp4"
+            vid_path = "./downloads/"+vid_name
+            vid_link = vids_dict[vid]
+            command = "youtube-dl -o '" + vid_path + "' -f 'bestvideo[height=360]+bestaudio' " + vid_link
+            print(command)
+            os.system(command)
             await message.reply(video)
 
 bot.run()
