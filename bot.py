@@ -11,10 +11,11 @@ paras = soup.find_all("p")
 
 title = paras[0].string
 
-vids = paras[2]
-links = [link.extract().text for link in vids.findAll('a')]
+vids = ''.join([ str(tag) for tag in soup.find_all("p", style="text-align:center;font-size:25px;") ])
+vids_soup = BeautifulSoup(vids, 'html.parser')
+links = [link.extract().text for link in vids_soup.findAll('a')]
 name = re.compile('\d+\..*?(?=<br/>)')
-names = name.findall(str(vids))
+names = name.findall(vids)
 
 vids_dict = dict(zip(names, links))
 
