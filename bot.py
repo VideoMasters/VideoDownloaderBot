@@ -18,7 +18,7 @@ async def send_video(message, path, caption):
     duration = atr[0].duration
     width = atr[0].w
     height = atr[0].h
-    thumb = files.get_file_thumb(path)
+    thumb = "thumb.png"
     await message.reply_video(
         video=path,
         caption=caption,
@@ -44,6 +44,8 @@ async def upload(bot, message):
         paras = soup.find_all("p")
 
         title = paras[0].string
+        await message.reply(title)
+        await message.reply_chat_action("Sending Videos")
 
         vids = "".join(
             [
@@ -56,8 +58,6 @@ async def upload(bot, message):
         name = re.compile("\d+\..*?(?=<br/>)")
         names = name.findall(vids)
         vids_dict = dict(zip(names, links))
-
-        await message.reply(title)
 
         for vid in vids_dict:
             vid_name = vid + ".mp4"
