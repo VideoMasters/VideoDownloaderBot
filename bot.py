@@ -3,6 +3,7 @@ import os
 from telegram_upload import files
 from pyrogram import Client
 from pyrogram import filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from bs4 import BeautifulSoup
 
 bot = Client("bot", config_file="config.ini")
@@ -41,11 +42,18 @@ async def upload(bot, message):
 
         soup = BeautifulSoup(source, "html.parser")
 
-        paras = soup.find_all("p")
+        formats = ["144", "240", "360", "480", "720"]
+        buttons = []
+        for format in formats:
+            buttons.append(
+                InlineKeyboardButton(text=format + "p", callback_data=format)
+            )
+        buttons_markup = InlineKeyboardMarkup([buttons])
 
+        paras = soup.find_all("p")
         title = paras[0].string
-        await message.reply(title)
-        await message.reply_chat_action("Sending Videos")
+        await message.reply(title, quote=True, reply_markup=buttons_markup)
+        await message.reply_chat_action("upload_video")
 
         vids = "".join(
             [
@@ -69,9 +77,9 @@ async def upload(bot, message):
                 + "' -f 'bestvideo[height=360]+bestaudio' "
                 + vid_link
             )
-            os.system(command)
-            await send_video(message, vid_path, vid)
-            os.remove(vid_path)
+            # os.system(command)
+            # await send_video(message, vid_path, vid)
+            # os.remove(vid_path)
 
         os.remove(file)
 
