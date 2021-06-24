@@ -67,6 +67,7 @@ async def choose_format(bot, message):
 async def upload(bot, query):
     message = query.message.reply_to_message
     await message.reply_chat_action("upload_video")
+    format = query.data
     file = (
         "./downloads/"
         + str(message.from_user.id)
@@ -100,13 +101,12 @@ async def upload(bot, query):
         command = (
             "youtube-dl -o '"
             + vid_path
-            + "' -f 'bestvideo[height=360]+bestaudio' "
+            + "' -f 'bestvideo[height="+format+"]+bestaudio' "
             + vid_link
         )
-        print(command)
-        # os.system(command)
-        # await send_video(message, vid_path, vid)
-        # os.remove(vid_path)
+        os.system(command)
+        await send_video(message, vid_path, vid)
+        os.remove(vid_path)
 
     os.remove(file)
 
