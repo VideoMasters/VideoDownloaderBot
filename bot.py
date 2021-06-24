@@ -1,5 +1,6 @@
 import re
 import os
+from pyrogram.types.messages_and_media import message
 from telegram_upload import files
 from pyrogram import Client
 from pyrogram import filters
@@ -32,12 +33,18 @@ async def send_video(message, path, caption):
 
 
 @bot.on_message(filters.document)
-async def upload(bot, message):
+async def choose_format(bot, message):
     if message.document["mime_type"] == "text/html":
-        file = message.document.file_id + ".html"
+        file = (
+            "./downloads/"
+            + str(message.from_user.id)
+            + "/"
+            + message.document.file_id
+            + ".html"
+        )
         await message.download(file)
 
-        with open("./downloads/" + file, "r") as f:
+        with open(file, "r") as f:
             source = f.read()
 
         soup = BeautifulSoup(source, "html.parser")
@@ -53,35 +60,54 @@ async def upload(bot, message):
         paras = soup.find_all("p")
         title = paras[0].string
         await message.reply(title, quote=True, reply_markup=buttons_markup)
-        await message.reply_chat_action("upload_video")
-
-        vids = "".join(
-            [
-                str(tag)
-                for tag in soup.find_all("p", style="text-align:center;font-size:25px;")
-            ]
-        )
-        vids_soup = BeautifulSoup(vids, "html.parser")
-        links = [link.extract().text for link in vids_soup.findAll("a")]
-        name = re.compile("\d+\..*?(?=<br/>)")
-        names = name.findall(vids)
-        vids_dict = dict(zip(names, links))
-
-        for vid in vids_dict:
-            vid_name = vid + ".mp4"
-            vid_path = "./downloads/" + vid_name
-            vid_link = vids_dict[vid]
-            command = (
-                "youtube-dl -o '"
-                + vid_path
-                + "' -f 'bestvideo[height=360]+bestaudio' "
-                + vid_link
-            )
-            # os.system(command)
-            # await send_video(message, vid_path, vid)
-            # os.remove(vid_path)
-
         os.remove(file)
 
+
+@bot.on_callback_query()
+async def upload(bot, query):
+    message = query.message.reply_to_message
+    await message.reply_chat_action("upload_video")
+    file = (
+        "./downloads/"
+        + str(message.from_user.id)
+        + "/"
+        + message.document.file_id
+        + ".html"
+    )
+    await message.download(file)
+
+    with open(file, "r") as f:
+        source = f.read()
+
+    soup = BeautifulSoup(source, "html.parser")
+
+    vids = "".join(
+        [
+            str(tag)
+            for tag in soup.find_all("p", style="text-align:center;font-size:25px;")
+        ]
+    )
+    vids_soup = BeautifulSoup(vids, "html.parser")
+    links = [link.extract().text for link in vids_soup.findAll("a")]
+    name = re.compile("\d+\..*?(?=<br/>)")
+    names = name.findall(vids)
+    vids_dict = dict(zip(names, links))
+
+    for vid in vids_dict:
+        vid_name = vid + ".mp4"
+        vid_path = "./downloads/" + str(message.from_user.id) + "/" + vid_name
+        vid_link = vids_dict[vid]
+        command = (
+            "youtube-dl -o '"
+            + vid_path
+            + "' -f 'bestvideo[height=360]+bestaudio' "
+            + vid_link
+        )
+        print(command)
+        # os.system(command)
+        # await send_video(message, vid_path, vid)
+        # os.remove(vid_path)
+
+    os.remove(file)
 
 bot.run()
