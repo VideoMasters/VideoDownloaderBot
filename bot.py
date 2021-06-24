@@ -32,17 +32,21 @@ async def upload(bot, message):
         links = [link.extract().text for link in vids_soup.findAll('a')]
         name = re.compile('\d+\..*?(?=<br/>)')
         names = name.findall(vids)
-
         vids_dict = dict(zip(names, links))
+
         await message.reply(title)
+
         for vid in vids_dict:
             video = 'Name: ' + vid + '\n' + 'Link: ' + vids_dict[vid]
             vid_name = vid+".mp4"
             vid_path = "./downloads/"+vid_name
             vid_link = vids_dict[vid]
             command = "youtube-dl -o '" + vid_path + "' -f 'bestvideo[height=360]+bestaudio' " + vid_link
-            print(command)
             os.system(command)
-            await message.reply(video)
+            await message.reply_video(video=vid_path, caption=vid)
+            os.remove(vid_path)
+
+        os.remove(file)
+
 
 bot.run()
