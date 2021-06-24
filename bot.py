@@ -66,7 +66,6 @@ async def choose_format(bot, message):
 @bot.on_callback_query()
 async def upload(bot, query):
     message = query.message.reply_to_message
-    await message.reply_chat_action("upload_video")
     format = query.data
     file = (
         "./downloads/"
@@ -105,6 +104,7 @@ async def upload(bot, query):
             + vid_link
         )
         os.system(command)
+        await message.reply_chat_action("upload_video")
         await send_video(message, vid_path, vid)
         os.remove(vid_path)
 
