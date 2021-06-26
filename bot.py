@@ -1,5 +1,6 @@
 import re
 import os
+from config import Config
 from pyrogram.types.messages_and_media import message
 from telegram_upload import files
 from pyrogram import Client
@@ -7,7 +8,11 @@ from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from bs4 import BeautifulSoup
 
-bot = Client("bot", config_file="config.ini")
+API_ID = int(os.environ.get("API_ID", Config.API_ID))
+API_HASH = os.environ.get("API_HASH", Config.API_HASH)
+BOT_TOKEN = os.environ.get("BOT_TOKEN", Config.BOT_TOKEN)
+
+bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 
 @bot.on_message(filters.command("start"))
