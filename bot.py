@@ -1,6 +1,7 @@
 import re
 import os
 import asyncio
+from subprocess import getstatusoutput
 from config import Config
 from pyrogram.types.messages_and_media import message
 from telegram_upload import files
@@ -117,14 +118,20 @@ async def send_video(message, path, caption):
     # os.remove(file)
 
 async def download_video(video):
-    await asyncio.sleep(0)
-    print(video)
-    print(video[0][-1])
+    index = video[0]
+    link = video[1]
+    title = video[2]
+    topic = video[3]
+    if title == '':
+        st1, title  = getstatusoutput("yt-dlp -e  --no-warning '{link}'")
+    print(title)
+
 
 
 async def download_videos(videos):
-    await asyncio.gather(*(download_video(video) for video in videos))
-    return
+    videos = [(videos.index(video), video[0], video[1], video[2], video[3]) for video in videos]
+    asyncio.gather(*(download_video(video) for video in videos))
+
 
 
 @bot.on_callback_query()
