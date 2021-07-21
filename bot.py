@@ -205,7 +205,7 @@ async def choose_format(bot, query):
     await download_videos(message, videos)
 
 
-@bot.on_message(filters.command("downloadLink"))
+@bot.on_message(filters.command("download_link"))
 async def download_link(bot, message):
     if len(message.command) == 1:
         await message.reply(
