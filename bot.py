@@ -168,11 +168,11 @@ async def download_video(message, video):
     cmd = f"yt-dlp -o './download/{chat}/%(id)s.%(ext)s' -f {vid_format} --no-warning '{link}'"
     st2, filename = getstatusoutput(f"{cmd} --get-filename -R 25")
     if st2 != 0:
-        await message.reply(f"Can't download.\n\nLink: {link}", quote=False)
+        await message.reply(f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False)
         return
     st3, out = getstatusoutput(f"{cmd} -R 25 --fragment-retries 25")
     if st3 != 0:
-        await message.reply(f"Can't download.\n\nLink: {link}", quote=False)
+        await message.reply(f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False)
         return
     else:
         path = filename
