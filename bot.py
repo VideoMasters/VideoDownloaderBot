@@ -36,6 +36,7 @@ async def send_video(message, path, caption):
         height=height,
         thumb=thumb,
         supports_streaming=True,
+        quote=False
     )
 
 
@@ -115,23 +116,73 @@ async def send_video(message, path, caption):
         # await send_video(message, vid_path, vid)
         # os.remove(vid_path)
 
-    # os.remove(file)
-
-async def download_video(video):
+async def download_video(message, video):
+    chat = message.chat.id
     index = video[0]
     link = video[1]
     vid_format = video[2]
     title = video[3]
     topic = video[4]
+    st1, yt_title  = getstatusoutput(f"yt-dlp -e  --no-warning '{link}' -R 50")
+    if st1 == 1:
+        await message.reply(f"Can't download. Probably DRM\n\nLink: {link}", quote=False)
+        return
     if title == '':
-        st1, title  = getstatusoutput(f"yt-dlp -e  --no-warning '{link}'")
-    print(st1, title)
+        title = yt_title
+    caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
+
+    if 'youtu' in link:
+        if vid_format == '144':
+            ytf = 160
+        elif vid_format == '240':
+            ytf = 133
+        elif vid_format == '360':
+            ytf = 18
+        elif vid_format == '480':
+            ytf = 135
+        elif vid_format == '720':
+            ytf = 22
+        else:
+            ytf = 18
+    elif ('deshdeepak' in link and len(link.split('/')[-1]) == 13) or ('magnetoscript' in link and ('brightcove' in link or len(link.split('/')[-1]) == 13)):
+        if vid_format not in ['144', '240', '360', '480', '720']:
+            vid_format = '360'
+        ytf = f"'bestvideo[height<={vid_format}+bestaudio]'"
+    elif ('deshdeepak' in link and len(link.split('/')[-1]) == 8) or ('magnetoscript' in link and 'jwp' in link) :
+        if vid_format == '144':
+            vid_format == '180'
+        elif vid_format == '240':
+            vid_format == '270'
+        elif vid_format == '360':
+            vid_format == '360'
+        elif vid_format == '480':
+            vid_format == '540'
+        elif vid_format == '720':
+            vid_format == '720'
+        else:
+            vid_format = '360'
+        ytf = f"'bestvideo[height<={vid_format}+bestaudio]'"
+    else:
+        return
+
+    cmd = f"yt-dlp -o './download/{chat}/%(id)s.%(ext)s' -f {vid_format} --no-warning '{link}'"
+    st2, filename = getstatusoutput(f"{cmd} --get-filename -R 25")
+    if st2 != 0:
+        await message.reply(f"Can't download.\n\nLink: {link}", quote=False)
+        return
+    st3, out = getstatusoutput(f"{cmd} -R 25 --fragment-retries 25")
+    if st3 != 0:
+        await message.reply(f"Can't download.\n\nLink: {link}", quote=False)
+        return
+    else:
+        path = filename
+        await send_video(message, path, caption)
 
 
 
-async def download_videos(videos):
+async def download_videos(message, videos):
     videos = [(videos.index(video), video[0], video[1], video[2], video[3]) for video in videos]
-    asyncio.gather(*(download_video(video) for video in videos))
+    asyncio.gather(*(download_video(message, video) for video in videos))
 
 
 
@@ -149,7 +200,7 @@ async def choose_format(bot, query):
         videos.append((video_link, video_format, '', ''))
 
     await message.reply('Downloading!!!')
-    await download_videos(videos)
+    await download_videos(message, videos)
 
 
 @bot.on_message(filters.command("downloadLink"))
@@ -181,7 +232,7 @@ async def download_link(bot, message):
             videos.append((video_link, video_format, '', ''))
 
         await message.reply('Downloading!!!')
-        await download_videos(videos)
+        await download_videos(message, videos)
 
 
 bot.run()
