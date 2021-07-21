@@ -124,7 +124,7 @@ async def download_video(video):
     title = video[3]
     topic = video[4]
     if title == '':
-        st1, title  = getstatusoutput("yt-dlp -e  --no-warning '{link}'")
+        st1, title  = getstatusoutput(f"yt-dlp -e  --no-warning '{link}'")
     print(title)
 
 
