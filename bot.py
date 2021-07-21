@@ -120,8 +120,9 @@ async def send_video(message, path, caption):
 async def download_video(video):
     index = video[0]
     link = video[1]
-    title = video[2]
-    topic = video[3]
+    vid_format = video[2]
+    title = video[3]
+    topic = video[4]
     if title == '':
         st1, title  = getstatusoutput("yt-dlp -e  --no-warning '{link}'")
     print(title)
