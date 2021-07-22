@@ -161,7 +161,7 @@ async def download_video(message, video):
     cmd = f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
-    if st2 != 0:
+    if st1 != 0:
         await message.reply(f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}", quote=False)
         return
     yt_title, filename = out1.split('\n')
