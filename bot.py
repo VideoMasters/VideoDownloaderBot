@@ -122,10 +122,10 @@ async def send_video(message, path, caption):
 
 async def download_video(message, video):
     chat = message.chat.id
-    link = video[1]
-    vid_format = video[2]
-    title = video[3]
-    topic = video[4]
+    link = video[0]
+    vid_format = video[1]
+    title = video[2]
+    topic = video[3]
 
     if "youtu" in link:
         if vid_format == "144":
@@ -210,8 +210,8 @@ async def choose_format(bot, query):
         await message.reply("Not authorized for this action.", quote=True)
         return
     def_format = query.data
-    command = message.text.split()
-    req_videos = command[1:-1]
+    commands = message.text.split()
+    req_videos = commands[1:-1]
     videos = []
     for video in req_videos:
         video_parts = video.split("|")
@@ -233,15 +233,16 @@ async def choose_format(bot, query):
 )
 async def download_link(bot, message):
     user = message.from_user.id
-    if len(message.command) == 1:
+    commands = message.text.split()
+    if len(commands) == 1:
         await message.reply(
             "Send video link(s) separated by space, and format separated by | or f at end to choose format (optional) \n\n"
             + "e.g. /downloadLink https://link1|360 http://link2 http://link3|480 \n\n"
             + "e.g. /downloadLink http://link1 http://link2 f"
         )
         return
-    if message.command[-1] == "f":
-        if user not in sudo_users and len(message.command)>3:
+    if commands[-1] == "f":
+        if user not in sudo_users and len(commands)>3:
             await message.reply("Not authorized for this action.", quote=True)
             return
         formats = ["144", "240", "360", "480", "720"]
@@ -253,10 +254,10 @@ async def download_link(bot, message):
         buttons_markup = InlineKeyboardMarkup([buttons])
         await message.reply("Choose Format", quote=True, reply_markup=buttons_markup)
     else:
-        if user not in sudo_users and len(message.command)>2:
+        if user not in sudo_users and len(commands)>2:
             await message.reply("Not authorized for this action.", quote=True)
             return
-        req_videos = message.command[1:]
+        req_videos = commands[1:]
         def_format = "360"
         videos = []
         for video in req_videos:
