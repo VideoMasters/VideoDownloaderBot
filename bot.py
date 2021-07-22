@@ -183,7 +183,8 @@ async def download_video(message, video):
                 current_video[chat] += 1
                 os.remove(path)
                 break
-            else pass
+            else:
+                pass
         return
 
 
