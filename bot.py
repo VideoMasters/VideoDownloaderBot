@@ -151,20 +151,20 @@ async def download_video(message, video):
         "magnetoscript" in link and "jwp" in link
     ):
         if vid_format == "144":
-            vid_format == "180"
+            vid_format = "180"
         elif vid_format == "240":
-            vid_format == "270"
+            vid_format = "270"
         elif vid_format == "360":
-            vid_format == "360"
+            vid_format = "360"
         elif vid_format == "480":
-            vid_format == "540"
+            vid_format = "540"
         elif vid_format == "720":
-            vid_format == "720"
+            vid_format = "720"
         else:
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
     else:
-        return
+        return 1, link, title
 
     cmd = (
         f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
@@ -172,11 +172,7 @@ async def download_video(message, video):
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
-        await message.reply(
-            f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}",
-            quote=False,
-        )
-        return
+        return 2, link, title
     yt_title, path = out1.split("\n")
     if title == "":
         title = yt_title
@@ -185,10 +181,7 @@ async def download_video(message, video):
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st2, out = getstatusoutput(download_cmd)
     if st2 != 0:
-        await message.reply(
-            f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False
-        )
-        return
+        return 3, link, title
     else:
         return path, caption
 
@@ -197,7 +190,18 @@ async def download_videos(message, videos):
     for video in await asyncio.gather(
         *(download_video(message, video) for video in videos)
     ):
-        if video is not None:
+        if video[0] in [1, 3]:
+            r, link, title = video
+            await message.reply(
+                f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False
+            )
+        elif video[0] == 2:
+            r, link, title = video
+            await message.reply(
+                f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}",
+                quote=False,
+            )
+        else:
             path, caption = video
             await send_video(message, path, caption)
             os.remove(path)
