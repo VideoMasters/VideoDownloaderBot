@@ -16,6 +16,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", Config.BOT_TOKEN)
 
 bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+current_video = {}
 
 @bot.on_message(filters.command("start"))
 async def start(bot, message):
@@ -117,6 +118,7 @@ async def send_video(message, path, caption):
         # os.remove(vid_path)
 
 async def download_video(message, video):
+    global current_video
     chat = message.chat.id
     index = video[0]
     link = video[1]
@@ -164,7 +166,7 @@ async def download_video(message, video):
     if st1 != 0:
         await message.reply(f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}", quote=False)
         return
-    yt_title, filename = out1.split('\n')
+    yt_title, path = out1.split('\n')
     if title == '':
         title = yt_title
     caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
@@ -175,13 +177,20 @@ async def download_video(message, video):
         await message.reply(f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False)
         return
     else:
-        path = filename
-        await send_video(message, path, caption)
-        os.remove(path)
+        while True:
+            if current_video[chat] == index:
+                await send_video(message, path, caption)
+                current_video[chat] += 1
+                os.remove(path)
+                break
+            else pass
+        return
 
 
 
 async def download_videos(message, videos):
+    global current_video
+    current_video[f"{message.chat.id}"] = 0
     videos = [(videos.index(video), video[0], video[1], video[2], video[3]) for video in videos]
     asyncio.gather(*(download_video(message, video) for video in videos))
 
