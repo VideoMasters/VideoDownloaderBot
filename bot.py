@@ -147,7 +147,7 @@ async def download_video(message, video):
     elif ('deshdeepak' in link and len(link.split('/')[-1]) == 13) or ('magnetoscript' in link and ('brightcove' in link or len(link.split('/')[-1]) == 13)):
         if vid_format not in ['144', '240', '360', '480', '720']:
             vid_format = '360'
-        ytf = f"'best[height<={vid_format}]"
+        ytf = f"'best[height<={vid_format}]'"
     elif ('deshdeepak' in link and len(link.split('/')[-1]) == 8) or ('magnetoscript' in link and 'jwp' in link) :
         if vid_format == '144':
             vid_format == '180'
