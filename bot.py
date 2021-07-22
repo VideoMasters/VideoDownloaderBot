@@ -161,7 +161,7 @@ async def download_video(message, video):
             vid_format == '720'
         else:
             vid_format = '360'
-        ytf = f"'bestvideo[height<={vid_format}]+bestaudio'"
+        ytf = f"'best[height<={vid_format}]'"
     else:
         return
 
