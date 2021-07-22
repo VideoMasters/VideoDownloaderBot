@@ -147,7 +147,7 @@ async def download_video(message, video):
     elif ('deshdeepak' in link and len(link.split('/')[-1]) == 13) or ('magnetoscript' in link and ('brightcove' in link or len(link.split('/')[-1]) == 13)):
         if vid_format not in ['144', '240', '360', '480', '720']:
             vid_format = '360'
-        ytf = f"'bestvideo[height<={vid_format}]+bestaudio'"
+        ytf = f"'best[height<={vid_format}]"
     elif ('deshdeepak' in link and len(link.split('/')[-1]) == 8) or ('magnetoscript' in link and 'jwp' in link) :
         if vid_format == '144':
             vid_format == '180'
@@ -171,7 +171,7 @@ async def download_video(message, video):
     if st2 != 0:
         await message.reply(f"Can't Download.\n\nTitle: {title}\n\nLink: {link}", quote=False)
         return
-    download_cmd = f"{cmd} -R 25 --fragment-retries 25"
+    download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st3, out = getstatusoutput(download_cmd)
     if st3 != 0:
         await message.reply(f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False)
