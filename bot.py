@@ -210,7 +210,7 @@ async def download_videos(message, videos):
 @bot.on_callback_query()
 async def choose_format(bot, query):
     message = query.message.reply_to_message
-    if query.from_user.id != message.from_user.id:
+    if query.from_user.id != message.from_user.id and query.from_user.id not in auth_users:
         await message.reply("Not authorized for this action.", quote=True)
         return
     def_format = query.data
