@@ -178,9 +178,9 @@ async def download_video(message, video):
         return
     else:
         while True:
-            if current_video[chat] == index:
+            if current_video[f"{chat}"] == index:
                 await send_video(message, path, caption)
-                current_video[chat] += 1
+                current_video[f"{chat}"] += 1
                 os.remove(path)
                 break
             else:
