@@ -123,16 +123,6 @@ async def download_video(message, video):
     vid_format = video[2]
     title = video[3]
     topic = video[4]
-    cmd = f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
-    filename_cmd = f"{cmd} -e --get-filename -R 25"
-    st1, out1 = getstatusoutput(filename_cmd)
-    if st2 != 0:
-        await message.reply(f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}", quote=False)
-        return
-    yt_title, filename = out1.split('\n')
-    if title == '':
-        title = yt_title
-    caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
 
     if 'youtu' in link:
         if vid_format == '144':
@@ -167,6 +157,17 @@ async def download_video(message, video):
         ytf = f"'best[height<={vid_format}]'"
     else:
         return
+
+    cmd = f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
+    filename_cmd = f"{cmd} -e --get-filename -R 25"
+    st1, out1 = getstatusoutput(filename_cmd)
+    if st2 != 0:
+        await message.reply(f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}", quote=False)
+        return
+    yt_title, filename = out1.split('\n')
+    if title == '':
+        title = yt_title
+    caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
 
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st2, out = getstatusoutput(download_cmd)
