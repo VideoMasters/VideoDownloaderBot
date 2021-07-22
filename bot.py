@@ -165,7 +165,7 @@ async def download_video(message, video):
     else:
         return
 
-    cmd = f"yt-dlp -o './download/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
+    cmd = f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
     filename_cmd = f"{cmd} --get-filename -R 25"
     st2, filename = getstatusoutput(filename_cmd)
     if st2 != 0:
