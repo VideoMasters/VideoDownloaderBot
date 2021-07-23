@@ -43,35 +43,31 @@ async def send_video(message, path, caption):
     )
 
 
-# @bot.on_message(filters.document)
-# async def choose_format(bot, message):
-# if message.document["mime_type"] == "text/html":
-# file = (
-# "./downloads/"
-# + str(message.from_user.id)
-# + "/"
-# + message.document.file_id
-# + ".html"
-# )
-# await message.download(file)
+@bot.on_message(filters.document)
+async def download_html(bot, message):
+    if message.document["mime_type"] != "text/html":
+        return
+    file = f"./downloads/{message.chat.id}/{message.document.file_id}.html"
+    await message.download(file)
 
-# with open(file, "r") as f:
-# source = f.read()
+    with open(file, "r") as f:
+        source = f.read()
 
-# soup = BeautifulSoup(source, "html.parser")
+    soup = BeautifulSoup(source, "html.parser")
 
-# formats = ["144", "240", "360", "480", "720"]
-# buttons = []
-# for format in formats:
-# buttons.append(
-# InlineKeyboardButton(text=format + "p", callback_data=format)
-# )
-# buttons_markup = InlineKeyboardMarkup([buttons])
+    formats = ["144", "240", "360", "480", "720"]
+    buttons = []
+    for format in formats:
+        buttons.append(
+            InlineKeyboardButton(text=format + "p", callback_data=format)
+        )
+    buttons_markup = InlineKeyboardMarkup([buttons])
 
-# paras = soup.find_all("p")
-# title = paras[0].string
-# await message.reply(title, quote=True, reply_markup=buttons_markup)
-# os.remove(file)
+    info = soup.select_one("p#info")
+    if info is not None:
+        title = soup.select_one("h1#batch").get_text(strip=True)
+    await message.reply(title, quote=True, reply_markup=buttons_markup)
+    os.remove(file)
 
 
 # @bot.on_callback_query()
@@ -208,10 +204,10 @@ async def download_videos(message, videos):
 
 
 @bot.on_callback_query()
-async def choose_format(bot, query):
+async def choose_video_format(bot, query):
     message = query.message.reply_to_message
     if query.from_user.id != message.from_user.id and query.from_user.id not in auth_users:
-        await message.reply("Not authorized for this action.", quote=True)
+        await message.reply("Not authorized for this action.", quote=False)
         return
     def_format = query.data
     commands = message.text.split()
