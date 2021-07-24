@@ -16,7 +16,8 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", Config.BOT_TOKEN)
 
 bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-auth_users = [888643297, 1033068180, 638422401, 1040136027]
+auth_users = list(eval(os.environ.get("AUTH_USERS", Config.AUTH_USERS)))
+sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
 sudo_users = auth_users
 
 
@@ -25,7 +26,7 @@ async def start(bot, message):
     await message.reply("Send video link or html")
 
 
-async def send_video(message, path, caption):
+async def send_video(message, path, caption, quote):
     atr = files.get_file_attributes(path)
     duration = atr[0].duration
     width = atr[0].w
@@ -39,7 +40,7 @@ async def send_video(message, path, caption):
         height=height,
         thumb=thumb,
         supports_streaming=True,
-        quote=False,
+        quote=quote,
     )
 
 
@@ -122,6 +123,7 @@ async def download_video(message, video):
     vid_format = video[1]
     title = video[2]
     topic = video[3]
+    quote = video[4]
 
     if "youtu" in link:
         if vid_format == "144":
@@ -160,7 +162,8 @@ async def download_video(message, video):
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
     else:
-        return 1, link, title
+        caption = f"Can't download from this site.\n\nLink: {link}\n\nTitle: {title}"
+        return 1, '', caption, quote
 
     cmd = (
         f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
@@ -168,38 +171,31 @@ async def download_video(message, video):
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
-        return 2, link, title
+        caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}"
+        return 2, '', caption, quote
     yt_title, path = out1.split("\n")
     if title == "":
         title = yt_title
-    caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
 
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st2, out = getstatusoutput(download_cmd)
     if st2 != 0:
-        return 3, link, title
+        caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}"
+        return 3, '', caption, quote
     else:
-        return path, caption
+        caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
+        return 0, path, caption, quote
 
 
 async def download_videos(message, videos):
     for video in await asyncio.gather(
         *(download_video(message, video) for video in videos)
     ):
-        if video[0] in [1, 3]:
-            r, link, title = video
-            await message.reply(
-                f"Can't download.\n\nTitle: {title}\n\nLink: {link}", quote=False
-            )
-        elif video[0] == 2:
-            r, link, title = video
-            await message.reply(
-                f"Can't Download. Probably DRM\n\nTitle: {title}\n\nLink: {link}",
-                quote=False,
-            )
-        else:
-            path, caption = video
-            await send_video(message, path, caption)
+        r, path, caption, quote = video
+        if r in [1, 2, 3]:
+            await message.reply(caption, quote=quote)
+        elif r == 0:
+            await send_video(message, path, caption, quote)
             os.remove(path)
 
 
@@ -207,7 +203,6 @@ async def download_videos(message, videos):
 async def choose_video_format(bot, query):
     message = query.message.reply_to_message
     if query.from_user.id != message.from_user.id and query.from_user.id not in auth_users:
-        await message.reply("Not authorized for this action.", quote=False)
         return
     def_format = query.data
     commands = message.text.split()
@@ -221,15 +216,17 @@ async def choose_video_format(bot, query):
             if len(video_parts) == 2 and video_parts[1] != ""
             else def_format
         )
-        videos.append((video_link, video_format, "", ""))
+        videos.append((video_link, video_format, "", "", True))
 
     await message.reply("Downloading!!!")
     await download_videos(message, videos)
 
 
-@bot.on_message(
+@bot.on_message((
     filters.command("download_link")
     | filters.regex("^/download_link@videos_downloading_bot")
+    ) &
+    (filters.chat(sudo_groups) | filters.user(sudo_users))
 )
 async def download_link(bot, message):
     user = message.from_user.id
@@ -268,7 +265,7 @@ async def download_link(bot, message):
                 if len(video_parts) == 2 and video_parts[1] != ""
                 else def_format
             )
-            videos.append((video_link, video_format, "", ""))
+            videos.append((video_link, video_format, "", "", False))
 
         await message.reply("Downloading!!!")
         await download_videos(message, videos)
