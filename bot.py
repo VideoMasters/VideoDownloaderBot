@@ -265,7 +265,7 @@ async def download_link(bot, message):
                 if len(video_parts) == 2 and video_parts[1] != ""
                 else def_format
             )
-            videos.append((video_link, video_format, "", "", False))
+            videos.append((video_link, video_format, "", "", True))
 
         await message.reply("Downloading!!!")
         await download_videos(message, videos)
