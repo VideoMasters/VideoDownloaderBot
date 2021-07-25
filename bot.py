@@ -202,7 +202,8 @@ async def download_videos(message, videos):
 @bot.on_callback_query()
 async def choose_video_format(bot, query):
     message = query.message.reply_to_message
-    if query.from_user.id != message.from_user.id and query.from_user.id not in auth_users:
+    if query.from_user.id != message.from_user.id:
+        await query.answer("❌ Not for you", True)
         return
     def_format = query.data
     commands = message.text.split()
@@ -234,8 +235,10 @@ async def download_link(bot, message):
     if len(commands) == 1:
         await message.reply(
             "Send video link(s) separated by space, and format separated by | or f at end to choose format (optional) \n\n"
-            + "e.g. /downloadLink https://link1|360 http://link2 http://link3|480 \n\n"
-            + "e.g. /downloadLink http://link1 http://link2 f"
+            + "e.g. /downloadLink https://link1|360 http://link2 http://link3|480 \n"
+            + "e.g. /downloadLink http://link1 http://link2 f\n\n"
+            + "Default format 360p if unspecified.\n"
+            + "One link per user at a time."
         )
         return
     if commands[-1] == "f":
