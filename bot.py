@@ -63,7 +63,19 @@ async def send_video(message, path, caption, quote):
 async def choose_html_video_format(bot, query):
     message = query.message.reply_to_message
     def_format = query.data
-    print(def_format)
+    if message.document["mime_type"] != "text/html":
+        return
+    file = f"./downloads/{message.chat.id}/{message.document.file_id}.html"
+
+    with open(file, "r") as f:
+        source = f.read()
+
+    soup = BeautifulSoup(source, "html.parser")
+
+    info = soup.select_one("p#info")
+    if info is None:
+        return
+
 
 
 @bot.on_message(filters.document)
@@ -78,15 +90,16 @@ async def download_html(bot, message):
 
     soup = BeautifulSoup(source, "html.parser")
 
+    info = soup.select_one("p#info")
+    if info is not None:
+        title = soup.select_one("h1#batch").get_text(strip=True)
+
     formats = ["144", "240", "360", "480", "720"]
     buttons = []
     for format in formats:
         buttons.append(InlineKeyboardButton(text=format + "p", callback_data=format))
     buttons_markup = InlineKeyboardMarkup([buttons])
 
-    info = soup.select_one("p#info")
-    if info is not None:
-        title = soup.select_one("h1#batch").get_text(strip=True)
     await message.reply(title, quote=True, reply_markup=buttons_markup)
     os.remove(file)
 
@@ -163,7 +176,7 @@ async def download_video(message, video):
         ytf = f"'bestvideo[height<={vid_format}]+bestaudio'"
     elif ("deshdeepak" in link and len(link.split("/")[-1]) == 8) or (
         "magnetoscript" in link and "jwp" in link
-    ):
+    ) or "jwplayer" in link:
         if vid_format == "144":
             vid_format = "180"
         elif vid_format == "240":
@@ -178,8 +191,7 @@ async def download_video(message, video):
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
     else:
-        caption = f"Can't download from this site.\n\nLink: {link}\n\nTitle: {title}"
-        return 1, "", caption, quote
+        ytf = "'best'"
 
     cmd = (
         f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
@@ -187,17 +199,17 @@ async def download_video(message, video):
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
-        caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}"
-        return 2, "", caption, quote
+        caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}\n\nError: {out1}"
+        return 1, "", caption, quote
     yt_title, path = out1.split("\n")
     if title == "":
         title = yt_title
 
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
-    st2, out = getstatusoutput(download_cmd)
+    st2, out2 = getstatusoutput(download_cmd)
     if st2 != 0:
-        caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}"
-        return 3, "", caption, quote
+        caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}\n\nError: {out2}"
+        return 2, "", caption, quote
     else:
         caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
         return 0, path, caption, quote
@@ -208,7 +220,7 @@ async def download_videos(message, videos):
         *(download_video(message, video) for video in videos)
     ):
         r, path, caption, quote = video
-        if r in [1, 2, 3]:
+        if r in [1, 2]:
             await message.reply(caption, quote=quote)
         elif r == 0:
             await send_video(message, path, caption, quote)
