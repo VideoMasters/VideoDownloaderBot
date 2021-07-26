@@ -21,6 +21,21 @@ sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
 sudo_users = auth_users
 
 
+async def query_same_user_filter_func(_, __, query):
+    message = query.message.reply_to_message
+    if query.from_user.id != message.from_user.id:
+        await query.answer("❌ Not for you", True)
+        return False
+    else:
+        return True
+
+
+query_same_user = filters.create(query_same_user_filter_func)
+query_document = filters.create(
+    lambda _, __, query: query.message.reply_to_message.document
+)
+
+
 @bot.on_message(filters.command("start"))
 async def start(bot, message):
     await message.reply("Send video link or html")
@@ -44,6 +59,13 @@ async def send_video(message, path, caption, quote):
     )
 
 
+@bot.on_callback_query(query_document & query_same_user)
+async def choose_html_video_format(bot, query):
+    message = query.message.reply_to_message
+    def_format = query.data
+    print(def_format)
+
+
 @bot.on_message(filters.document)
 async def download_html(bot, message):
     if message.document["mime_type"] != "text/html":
@@ -59,9 +81,7 @@ async def download_html(bot, message):
     formats = ["144", "240", "360", "480", "720"]
     buttons = []
     for format in formats:
-        buttons.append(
-            InlineKeyboardButton(text=format + "p", callback_data=format)
-        )
+        buttons.append(InlineKeyboardButton(text=format + "p", callback_data=format))
     buttons_markup = InlineKeyboardMarkup([buttons])
 
     info = soup.select_one("p#info")
@@ -126,14 +146,10 @@ async def download_video(message, video):
     quote = video[4]
 
     if "youtu" in link:
-        if vid_format == "144":
-            ytf = 160
-        elif vid_format == "240":
-            ytf = 133
+        if vid_format in ["144", "240", "480"]:
+            ytf = f"'bestvideo[height<={vid_format}][ext=mp4]+bestaudio'"
         elif vid_format == "360":
             ytf = 18
-        elif vid_format == "480":
-            ytf = 135
         elif vid_format == "720":
             ytf = 22
         else:
@@ -163,7 +179,7 @@ async def download_video(message, video):
         ytf = f"'best[height<={vid_format}]'"
     else:
         caption = f"Can't download from this site.\n\nLink: {link}\n\nTitle: {title}"
-        return 1, '', caption, quote
+        return 1, "", caption, quote
 
     cmd = (
         f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
@@ -172,7 +188,7 @@ async def download_video(message, video):
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
         caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}"
-        return 2, '', caption, quote
+        return 2, "", caption, quote
     yt_title, path = out1.split("\n")
     if title == "":
         title = yt_title
@@ -181,7 +197,7 @@ async def download_video(message, video):
     st2, out = getstatusoutput(download_cmd)
     if st2 != 0:
         caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}"
-        return 3, '', caption, quote
+        return 3, "", caption, quote
     else:
         caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
         return 0, path, caption, quote
@@ -199,15 +215,7 @@ async def download_videos(message, videos):
             os.remove(path)
 
 
-@bot.on_callback_query()
-async def choose_video_format(bot, query):
-    message = query.message.reply_to_message
-    if query.from_user.id != message.from_user.id:
-        await query.answer("❌ Not for you", True)
-        return
-    def_format = query.data
-    commands = message.text.split()
-    req_videos = commands[1:-1]
+def get_videos(req_videos, def_format):
     videos = []
     for video in req_videos:
         video_parts = video.split("|")
@@ -219,15 +227,26 @@ async def choose_video_format(bot, query):
         )
         videos.append((video_link, video_format, "", "", True))
 
+    return videos
+
+
+@bot.on_callback_query(~query_document & query_same_user)
+async def choose_video_format(bot, query):
+    message = query.message.reply_to_message
+    def_format = query.data
+    commands = message.text.split()
+    req_videos = commands[1:-1]
+    videos = get_videos(req_videos, def_format)
     await message.reply("Downloading!!!")
     await download_videos(message, videos)
 
 
-@bot.on_message((
-    filters.command("download_link")
-    | filters.regex("^/download_link@videos_downloading_bot")
-    ) &
-    (filters.chat(sudo_groups) | filters.user(sudo_users))
+@bot.on_message(
+    (
+        filters.command("download_link")
+        | filters.regex("^/download_link@videos_downloading_bot")
+    )
+    & (filters.chat(sudo_groups) | filters.user(sudo_users))
 )
 async def download_link(bot, message):
     user = message.from_user.id
@@ -242,7 +261,7 @@ async def download_link(bot, message):
         )
         return
     if commands[-1] == "f":
-        if user not in sudo_users and len(commands)>3:
+        if user not in sudo_users and len(commands) > 3:
             await message.reply("Not authorized for this action.", quote=True)
             return
         formats = ["144", "240", "360", "480", "720"]
@@ -254,22 +273,12 @@ async def download_link(bot, message):
         buttons_markup = InlineKeyboardMarkup([buttons])
         await message.reply("Choose Format", quote=True, reply_markup=buttons_markup)
     else:
-        if user not in sudo_users and len(commands)>2:
+        if user not in sudo_users and len(commands) > 2:
             await message.reply("Not authorized for this action.", quote=True)
             return
-        req_videos = commands[1:]
         def_format = "360"
-        videos = []
-        for video in req_videos:
-            video_parts = video.split("|")
-            video_link = video_parts[0]
-            video_format = (
-                video_parts[1]
-                if len(video_parts) == 2 and video_parts[1] != ""
-                else def_format
-            )
-            videos.append((video_link, video_format, "", "", True))
-
+        req_videos = commands[1:]
+        videos = get_videos(req_videos, def_format)
         await message.reply("Downloading!!!")
         await download_videos(message, videos)
 
