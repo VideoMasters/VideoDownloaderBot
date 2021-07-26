@@ -66,6 +66,8 @@ async def choose_html_video_format(bot, query):
     if message.document["mime_type"] != "text/html":
         return
     file = f"./downloads/{message.chat.id}/{message.document.file_id}.html"
+    print(message.document.file_id, file)
+    # await message.download(file)
 
     with open(file, "r") as f:
         source = f.read()
@@ -75,6 +77,8 @@ async def choose_html_video_format(bot, query):
     info = soup.select_one("p#info")
     if info is None:
         return
+    videos_soup = soup.select("div#videos")
+    print(videos_soup)
 
 
 
@@ -83,7 +87,8 @@ async def download_html(bot, message):
     if message.document["mime_type"] != "text/html":
         return
     file = f"./downloads/{message.chat.id}/{message.document.file_id}.html"
-    await message.download(file)
+    msg = await message.download(file)
+    print(msg)
 
     with open(file, "r") as f:
         source = f.read()
@@ -101,7 +106,7 @@ async def download_html(bot, message):
     buttons_markup = InlineKeyboardMarkup([buttons])
 
     await message.reply(title, quote=True, reply_markup=buttons_markup)
-    os.remove(file)
+    # os.remove(file)
 
 
 # @bot.on_callback_query()
@@ -191,6 +196,7 @@ async def download_video(message, video):
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
     else:
+        title = vid_format
         ytf = "'best'"
 
     cmd = (
