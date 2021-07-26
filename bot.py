@@ -195,6 +195,8 @@ async def download_video(message, video):
         else:
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
+        if '.mp4' in link:
+            ytf = "'best'"
     else:
         title = vid_format
         ytf = "'best'"
