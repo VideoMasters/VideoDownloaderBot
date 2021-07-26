@@ -41,7 +41,7 @@ async def start(bot, message):
     await message.reply("Send video link or html")
 
 
-async def send_video(message, path, caption, quote,filename):
+async def send_video(message, path, caption, quote, filename):
     atr = files.get_file_attributes(path)
     duration = atr[0].duration
     width = atr[0].w
@@ -56,7 +56,7 @@ async def send_video(message, path, caption, quote,filename):
         thumb=thumb,
         supports_streaming=True,
         quote=quote,
-        file_name=filename
+        # file_name=filename
     )
 
 
