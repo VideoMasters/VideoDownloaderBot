@@ -41,7 +41,7 @@ async def start(bot, message):
     await message.reply("Send video link or html")
 
 
-async def send_video(message, path, caption, quote):
+async def send_video(message, path, caption, quote,filename):
     atr = files.get_file_attributes(path)
     duration = atr[0].duration
     width = atr[0].w
@@ -56,6 +56,7 @@ async def send_video(message, path, caption, quote):
         thumb=thumb,
         supports_streaming=True,
         quote=quote,
+        file_name=filename
     )
 
 
@@ -163,6 +164,9 @@ async def download_video(message, video):
     topic = video[3]
     quote = video[4]
 
+    if not vid_format.isnumeric():
+        title = vid_format
+
     if "youtu" in link:
         if vid_format in ["144", "240", "480"]:
             ytf = f"'bestvideo[height<={vid_format}][ext=mp4]+bestaudio'"
@@ -198,17 +202,17 @@ async def download_video(message, video):
         if '.mp4' in link:
             ytf = "'best'"
     else:
-        title = vid_format
         ytf = "'best'"
 
     cmd = (
         f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
     )
+    filename = title.replace('/','|').replace('+','_').replace('?',':Q').replace('*',':S').replace('#',':H')
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
         caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}\n\nError: {out1}"
-        return 1, "", caption, quote
+        return 1, "", caption, quote, filename
     yt_title, path = out1.split("\n")
     if title == "":
         title = yt_title
@@ -217,21 +221,22 @@ async def download_video(message, video):
     st2, out2 = getstatusoutput(download_cmd)
     if st2 != 0:
         caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}\n\nError: {out2}"
-        return 2, "", caption, quote
+        return 2, "", caption, quote, filename
     else:
+        filename += '.' + path.split('.')[-1]
         caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
-        return 0, path, caption, quote
+        return 0, path, caption, quote, filename
 
 
 async def download_videos(message, videos):
     for video in await asyncio.gather(
         *(download_video(message, video) for video in videos)
     ):
-        r, path, caption, quote = video
+        r, path, caption, quote, filename = video
         if r in [1, 2]:
             await message.reply(caption, quote=quote)
         elif r == 0:
-            await send_video(message, path, caption, quote)
+            await send_video(message, path, caption, quote, filename)
             os.remove(path)
 
 
