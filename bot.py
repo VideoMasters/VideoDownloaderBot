@@ -23,14 +23,14 @@ sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
 sudo_users = auth_users
 
 
-# logging.basicConfig(
-    # filename="bot.log",
-    # format="%(asctime)s:%(levelname)s %(message)s",
-    # filemode="w",
-    # level=logging.WARNING,
-# )
+logging.basicConfig(
+    filename="bot.log",
+    format="%(asctime)s:%(levelname)s %(message)s",
+    filemode="w",
+    level=logging.WARNING,
+)
 
-# logger = logging.getLogger()
+logger = logging.getLogger()
 
 
 def exception(logger):
@@ -202,7 +202,7 @@ async def download_html(bot, message):
 # os.remove(vid_path)
 
 
-async def download_video(message, video):
+def download_video(message, video):
     chat = message.chat.id
     link = video[0]
     vid_format = video[1]
@@ -276,10 +276,8 @@ async def download_video(message, video):
 
 # @exception(logger)
 async def download_videos(message, videos):
-    for video in await asyncio.gather(
-        *(download_video(message, video) for video in videos)
-    ):
-        r, path, caption, quote, filename = video
+    for video in videos:
+        r, path, caption, quote, filename = download_video(message, video)
         if r in [1, 2]:
             await message.reply(caption, quote=quote)
         elif r == 0:
