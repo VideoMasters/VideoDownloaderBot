@@ -23,14 +23,14 @@ sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
 sudo_users = auth_users
 
 
-logging.basicConfig(
-    filename="bot.log",
-    format="%(asctime)s:%(levelname)s %(message)s",
-    filemode="w",
-    level=logging.WARNING,
-)
+# logging.basicConfig(
+    # filename="bot.log",
+    # format="%(asctime)s:%(levelname)s %(message)s",
+    # filemode="w",
+    # level=logging.WARNING,
+# )
 
-logger = logging.getLogger()
+# logger = logging.getLogger()
 
 
 def exception(logger):
@@ -92,6 +92,29 @@ async def send_video(message, path, caption, quote, filename):
         # file_name=filename
     )
 
+def parse_html(file, def_format):
+    with open(file, "r") as f:
+        source = f.read()
+
+    soup = BeautifulSoup(source, "html.parser")
+
+    all_videos_soup = soup.select_one("div#videos")
+    topics_soup = all_videos_soup.select("div.topic")
+    videos = []
+    for topic_soup in  topics_soup:
+        topic_name = topic_soup.select_one("span.topic_name").get_text(strip=True)
+        videos_soup = topic_soup.select("p.video")
+        for video_soup in videos_soup:
+            video_name = video_soup.select_one("span.video_name").get_text(strip=True)
+            video_link = video_soup.select_one("a").get_text(strip=True)
+            if not (video_link.startswith("http://") or video_link.startswith("https://")):
+                    continue
+            elif 'google' in video_link:
+                continue
+            videos.append((video_link, def_format, video_name, topic_name, False))
+
+    return videos
+
 
 @bot.on_callback_query(query_document & query_same_user)
 async def choose_html_video_format(bot, query):
@@ -99,30 +122,20 @@ async def choose_html_video_format(bot, query):
     def_format = query.data
     if message.document["mime_type"] != "text/html":
         return
-    file = f"./downloads/{message.chat.id}/{message.document.file_id}.html"
-    print(message.document.file_id, file)
-    # await message.download(file)
+    file = f"./downloads/{message.chat.id}/{message.document.file_unique_id}.html"
+    await message.download(file)
 
-    with open(file, "r") as f:
-        source = f.read()
-
-    soup = BeautifulSoup(source, "html.parser")
-
-    info = soup.select_one("p#info")
-    if info is None:
-        return
-    videos_soup = soup.select("div#videos")
-    print(videos_soup)
-
+    videos = parse_html(file, def_format)
+    await message.reply("Downloading!!!")
+    await download_videos(message, videos)
 
 
 @bot.on_message(filters.document)
 async def download_html(bot, message):
     if message.document["mime_type"] != "text/html":
         return
-    file = f"./downloads/{message.chat.id}/{message.document.file_id}.html"
+    file = f"./downloads/{message.chat.id}/{message.document.file_unique_id}.html"
     msg = await message.download(file)
-    print(msg)
 
     with open(file, "r") as f:
         source = f.read()
@@ -140,7 +153,7 @@ async def download_html(bot, message):
     buttons_markup = InlineKeyboardMarkup([buttons])
 
     await message.reply(title, quote=True, reply_markup=buttons_markup)
-    # os.remove(file)
+    os.remove(file)
 
 
 # @bot.on_callback_query()
@@ -261,7 +274,7 @@ async def download_video(message, video):
         return 0, path, caption, quote, filename
 
 
-@exception(logger)
+# @exception(logger)
 async def download_videos(message, videos):
     for video in await asyncio.gather(
         *(download_video(message, video) for video in videos)
