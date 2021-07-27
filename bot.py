@@ -1,6 +1,8 @@
 import re
 import os
 import asyncio
+import logging
+from functools import wraps
 from subprocess import getstatusoutput
 from config import Config
 from pyrogram.types.messages_and_media import message
@@ -19,6 +21,37 @@ bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 auth_users = list(eval(os.environ.get("AUTH_USERS", Config.AUTH_USERS)))
 sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
 sudo_users = auth_users
+
+
+logging.basicConfig(
+    filename="bot.log",
+    format="%(asctime)s:%(levelname)s %(message)s",
+    filemode="w",
+    level=logging.WARNING,
+)
+
+logger = logging.getLogger()
+
+
+def exception(logger):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+
+            try:
+                return func(*args, **kwargs)
+            except:
+                issue = "Exception in " + func.__name__ + "\n"
+                issue = (
+                    issue
+                    + "-------------------------\
+                ------------------------------------------------\n"
+                )
+                logger.exception(issue)
+
+        return wrapper
+
+    return decorator
 
 
 async def query_same_user_filter_func(_, __, query):
@@ -169,7 +202,7 @@ async def download_video(message, video):
 
     if "youtu" in link:
         if vid_format in ["144", "240", "480"]:
-            ytf = f"'bestvideo[height<={vid_format}][ext=mp4]+bestaudio'"
+            ytf = f"'bestvideo[height<={vid_format}][ext=mp4]+bestaudio[ext=m4a]'"
         elif vid_format == "360":
             ytf = 18
         elif vid_format == "720":
@@ -228,6 +261,7 @@ async def download_video(message, video):
         return 0, path, caption, quote, filename
 
 
+@exception(logger)
 async def download_videos(message, videos):
     for video in await asyncio.gather(
         *(download_video(message, video) for video in videos)
