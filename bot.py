@@ -123,6 +123,11 @@ def parse_html(file, def_format):
 @bot.on_callback_query(query_document & query_same_user)
 async def choose_html_video_format(bot, query):
     message = query.message.reply_to_message
+    if message.reply_to_message is not None:
+        if message.reply_to_message.document is not None:
+            message = message.reply_to_message
+        else:
+            return
     def_format = query.data
     if message.document["mime_type"] != "text/html":
         return
@@ -140,9 +145,14 @@ async def choose_html_video_format(bot, query):
         | filters.regex(f"^/download_link@{BOT}")
     )
     & (filters.chat(sudo_html_groups) | filters.user(sudo_users))
-    & filters.document
+    & ( filters.document | filters.reply)
     )
 async def download_html(bot, message):
+    if message.reply_to_message is not None:
+        if message.reply_to_message.document is not None:
+            message = message.reply_to_message
+        else:
+            return
     if message.document["mime_type"] != "text/html":
         return
     file = f"./downloads/{message.chat.id}/{message.document.file_unique_id}.html"
