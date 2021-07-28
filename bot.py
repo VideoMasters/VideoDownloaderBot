@@ -69,10 +69,22 @@ async def query_same_user_filter_func(_, __, query):
         return True
 
 
+async def query_document_filter_func(_, __, query):
+    msg = query.message.reply_to_message
+    msg = await __.get_messages(msg.chat.id,msg.message_id)
+    if msg.document is not None:
+        return True
+    elif msg.reply_to_message is not None:
+        if msg.reply_to_message.document is not None:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
 query_same_user = filters.create(query_same_user_filter_func)
-query_document = filters.create(
-    lambda _, __, query: query.message.reply_to_message.document
-)
+query_document = filters.create(query_document_filter_func)
 
 
 @bot.on_message(filters.command("start"))
@@ -124,12 +136,36 @@ def parse_html(file, def_format):
 
 @bot.on_callback_query(query_document & query_same_user)
 async def choose_html_video_format(bot, query):
-    message = query.message.reply_to_message
-    if message.reply_to_message is not None:
-        if message.reply_to_message.document is not None:
-            message = message.reply_to_message
+    msg = query.message.reply_to_message
+    msg = await bot.get_messages(msg.chat.id,msg.message_id)
+    only = False
+    if msg.document is not None:
+        commands = msg.caption.split()
+    else:
+        commands = msg.text.split()
+    if len(commands) == 1:
+        start_index = 1
+    elif len(commands) == 2:
+        if commands[1].isnumeric():
+            start_index = int(commands[1])
         else:
             return
+    elif len(commands) == 3 and commands[2] == "o":
+        if commands[1].isnumeric():
+            start_index = int(commands[1])
+            only = True
+        else:
+            return
+    else:
+        return
+
+    if msg.reply_to_message is not None:
+        if msg.reply_to_message.document is not None:
+            message = msg.reply_to_message
+        else:
+            return
+    else:
+        message = msg
     def_format = query.data
     if message.document["mime_type"] != "text/html":
         return
@@ -137,28 +173,35 @@ async def choose_html_video_format(bot, query):
     await message.download(file)
 
     videos = parse_html(file, def_format)
-    await message.reply("Downloading!!!")
-    await download_videos(message, videos)
+    if only:
+        videos = [videos[start_index-1]]
+    else:
+        videos = videos[start_index-1:]
+    n = len(videos)
+    await msg.reply(f"Downloading!!! {n} videos")
+    await download_videos(msg, videos, start_index)
 
 
 @bot.on_message(
     (
-        (filters.command("download_link") & ~ filters.group)
-        | filters.regex(f"^/download_link@{BOT}")
+        (filters.command("download_html") & ~ filters.group)
+        | filters.regex(f"^/download_html@{BOT}")
     )
     & (filters.chat(sudo_html_groups) | filters.user(sudo_users))
     & ( filters.document | filters.reply)
     )
-async def download_html(bot, message):
-    if message.reply_to_message is not None:
-        if message.reply_to_message.document is not None:
-            message = message.reply_to_message
+async def download_html(bot, msg):
+    if msg.reply_to_message is not None:
+        if msg.reply_to_message.document is not None:
+            message = msg.reply_to_message
         else:
             return
+    else:
+        message = msg
     if message.document["mime_type"] != "text/html":
         return
     file = f"./downloads/{message.chat.id}/{message.document.file_unique_id}.html"
-    msg = await message.download(file)
+    await message.download(file)
 
     with open(file, "r") as f:
         source = f.read()
@@ -175,8 +218,25 @@ async def download_html(bot, message):
         buttons.append(InlineKeyboardButton(text=format + "p", callback_data=format))
     buttons_markup = InlineKeyboardMarkup([buttons])
 
-    await message.reply(title, quote=True, reply_markup=buttons_markup)
+    await msg.reply(title, quote=True, reply_markup=buttons_markup)
     os.remove(file)
+
+
+@bot.on_message(
+    (
+        (filters.command("download_html") & ~ filters.group)
+        | filters.regex(f"^/download_html@{BOT}")
+    )
+    & (filters.chat(sudo_html_groups) | filters.user(sudo_users))
+    )
+async def download_html_info(bot, message):
+    await message.reply(
+            "Send html with command as caption or reply.\n"
+            + "Specify start index separated by space and o if only that index\n"
+            + "e.g. /download_html\n"
+            + "e.g. /download_html 5\n"
+            + "e.g. /download_html 5 o\n"
+            )
 
 
 # @bot.on_callback_query()
@@ -300,9 +360,10 @@ def download_video(message, video):
 
 
 @exception(logger)
-async def download_videos(message, videos):
+async def download_videos(message, videos, index=1):
     for video in videos:
         r, path, caption, quote, filename = download_video(message, video)
+        caption += f"\n\nIndex: {index}"
         if r in [1, 2]:
             try:
                 await message.reply(caption, quote=quote)
@@ -311,6 +372,7 @@ async def download_videos(message, videos):
         elif r == 0:
             await send_video(message, path, caption, quote, filename)
             os.remove(path)
+        index += 1
 
     await message.reply("Done.")
 
@@ -337,7 +399,8 @@ async def choose_video_format(bot, query):
     commands = message.text.split()
     req_videos = commands[1:-1]
     videos = get_videos(req_videos, def_format)
-    await message.reply("Downloading!!!")
+    n = len(videos)
+    await message.reply(f"Downloading!!! {n} videos")
     await download_videos(message, videos)
 
 
@@ -379,7 +442,8 @@ async def download_link(bot, message):
         def_format = "360"
         req_videos = commands[1:]
         videos = get_videos(req_videos, def_format)
-        await message.reply("Downloading!!!")
+        n = len(videos)
+        await message.reply(f"Downloading!!! {n} videos")
         await download_videos(message, videos)
 
 
