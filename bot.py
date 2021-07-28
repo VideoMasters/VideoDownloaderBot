@@ -247,6 +247,8 @@ def download_video(message, video):
         ytf = f"'best[height<={vid_format}]'"
         if '.mp4' in link:
             ytf = "'best'"
+        elif '.m3u8' in link:
+            ytf = "'best'"
     else:
         ytf = "'best'"
 
