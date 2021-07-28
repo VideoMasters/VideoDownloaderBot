@@ -18,8 +18,12 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", Config.BOT_TOKEN)
 
 bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+with bot:
+    BOT = bot.get_me().username.lower()
+
 auth_users = list(eval(os.environ.get("AUTH_USERS", Config.AUTH_USERS)))
 sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
+sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS", Config.GROUPS)))
 sudo_users = auth_users
 
 
@@ -130,7 +134,14 @@ async def choose_html_video_format(bot, query):
     await download_videos(message, videos)
 
 
-@bot.on_message(filters.document)
+@bot.on_message(
+    (
+        (filters.command("download_link") & ~ filters.group)
+        | filters.regex(f"^/download_link@{BOT}")
+    )
+    & (filters.chat(sudo_html_groups) | filters.user(sudo_users))
+    & filters.document
+    )
 async def download_html(bot, message):
     if message.document["mime_type"] != "text/html":
         return
@@ -315,8 +326,8 @@ async def choose_video_format(bot, query):
 
 @bot.on_message(
     (
-        filters.command("download_link")
-        | filters.regex("^/download_link@videos_downloading_bot")
+        (filters.command("download_link") & ~ filters.group)
+        | filters.regex(f"^/download_link@{BOT}")
     )
     & (filters.chat(sudo_groups) | filters.user(sudo_users))
 )

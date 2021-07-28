@@ -4,3 +4,4 @@ class Config:
     BOT_TOKEN = ""
     AUTH_USERS = ""
     GROUPS = ""
+    HTML_GROUPS = ""
