@@ -23,7 +23,7 @@ with bot:
 
 auth_users = list(eval(os.environ.get("AUTH_USERS", Config.AUTH_USERS)))
 sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
-sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS", Config.GROUPS)))
+sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS", Config.HTML_GROUPS)))
 sudo_users = auth_users
 
 
