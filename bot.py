@@ -28,6 +28,10 @@ sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
 sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS", Config.HTML_GROUPS)))
 sudo_users = auth_users
 
+thumb = os.environ.get("THUMB", Config.THUMB)
+if thumb.startswith("http://") or thumb.startswith("https://"):
+    getstatusoutput(f"wget '{thumb}' -o 'thumb.jpg'")
+    thumb = "thumb.jpg"
 
 logging.basicConfig(
     filename="bot.log",
@@ -97,7 +101,8 @@ async def send_video(message, path, caption, quote, filename):
     duration = atr[0].duration
     width = atr[0].w
     height = atr[0].h
-    thumb = "thumb.png"
+    if thumb == "":
+        thumb = files.get_video_thumb(path)
     await message.reply_video(
         video=path,
         caption=caption,

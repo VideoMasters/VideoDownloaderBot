@@ -5,3 +5,4 @@ class Config:
     AUTH_USERS = ""
     GROUPS = ""
     HTML_GROUPS = ""
+    THUMB = ""
