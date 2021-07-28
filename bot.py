@@ -2,6 +2,8 @@ import re
 import os
 import asyncio
 import logging
+import time
+from pyrogram.errors import FloodWait
 from functools import wraps
 from subprocess import getstatusoutput
 from config import Config
@@ -297,15 +299,20 @@ def download_video(message, video):
         return 0, path, caption, quote, filename
 
 
-# @exception(logger)
+@exception(logger)
 async def download_videos(message, videos):
     for video in videos:
         r, path, caption, quote, filename = download_video(message, video)
         if r in [1, 2]:
-            await message.reply(caption, quote=quote)
+            try:
+                await message.reply(caption, quote=quote)
+            except FloodWait as e:
+                time.sleep(e.x)
         elif r == 0:
             await send_video(message, path, caption, quote, filename)
             os.remove(path)
+
+    await message.reply("Done.")
 
 
 def get_videos(req_videos, def_format):
