@@ -5,4 +5,5 @@ venv/
 *.bk
 downloads/
 *.log
+.env
 
