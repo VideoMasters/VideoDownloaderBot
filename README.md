@@ -1,2 +1,2 @@
-# lecture_download_bot
-Download lectures using this telegram bot
+# VideoDownloaderBot
+Download videos from various websites using this telegram bot
