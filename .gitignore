@@ -1,4 +1,8 @@
 __pycache__/
 venv/
 *.session
+*.html
+*.bk
+downloads/
+*.log
 

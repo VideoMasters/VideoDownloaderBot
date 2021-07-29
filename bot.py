@@ -3,10 +3,10 @@ import os
 import asyncio
 import logging
 import time
+from dotenv import load_dotenv
 from pyrogram.errors import FloodWait
 from functools import wraps
 from subprocess import getstatusoutput
-from config import Config
 from pyrogram.types.messages_and_media import message
 from telegram_upload import files
 from pyrogram import Client
@@ -14,21 +14,23 @@ from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from bs4 import BeautifulSoup
 
-API_ID = int(os.environ.get("API_ID", Config.API_ID))
-API_HASH = os.environ.get("API_HASH", Config.API_HASH)
-BOT_TOKEN = os.environ.get("BOT_TOKEN", Config.BOT_TOKEN)
+load_dotenv()
+
+API_ID = int(os.environ.get("API_ID"))
+API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 with bot:
     BOT = bot.get_me().username.lower()
 
-auth_users = list(eval(os.environ.get("AUTH_USERS", Config.AUTH_USERS)))
-sudo_groups = list(eval(os.environ.get("GROUPS", Config.GROUPS)))
-sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS", Config.HTML_GROUPS)))
+auth_users = list(eval(os.environ.get("AUTH_USERS")))
+sudo_groups = list(eval(os.environ.get("GROUPS")))
+sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS")))
 sudo_users = auth_users
 
-thumb = os.environ.get("THUMB", Config.THUMB)
+thumb = os.environ.get("THUMB")
 if thumb.startswith("http://") or thumb.startswith("https://"):
     getstatusoutput(f"wget '{thumb}' -o 'thumb.jpg'")
     thumb = "thumb.jpg"
