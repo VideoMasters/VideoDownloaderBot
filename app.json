@@ -1,0 +1,35 @@
+{
+	"name":"VideoDownloaderBot",
+	"description":"Download videos from various websites using this telegram bot",
+	"repository":"https://github.com/DaruaraFriends/VideoDownloaderBot",
+	"env": {
+		"API_ID":{
+			"description": "Get your telegram API ID from https://my.telegram.org",
+			"value":""
+		},
+		"API_HASH":{
+			"description":"Get your telegram API HASH from https://my.telegram.org",
+			"value":""
+		},
+		"BOT_TOKEN":{
+			"description":"Get from BotFather",
+			"value":""
+		},
+		"AUTH_USERS":{
+			"description":"Users who can use",
+			"value":""
+		},
+		"GROUPS":{
+			"description":"Groups where to work",
+			"value":""
+		},
+		"HTML_GROUPS":{
+			"description":"Groups where to work for html",
+			"value":""
+		},
+		"THUMB":{
+			"description":"Thumbnail link. Leave empty for using video thumbnail.",
+			"value":"thumb.jpg"
+		}
+	}
+}
