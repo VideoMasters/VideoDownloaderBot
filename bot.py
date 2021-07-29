@@ -97,6 +97,7 @@ async def start(bot, message):
 
 
 async def send_video(message, path, caption, quote, filename):
+    global thumb
     atr = files.get_file_attributes(path)
     duration = atr[0].duration
     width = atr[0].w
