@@ -51,8 +51,8 @@ Add all environment vars either from cli or heroku settings
     docker run -d --restart=always --env-file .env vdb
 ```
 
-
-
-
-
+### Instructions
+- /download_link - To download from links
+- /download_html - To download from htmls
+- /download_link@bot_username & /download_html@bot_username - To use in groups
 
