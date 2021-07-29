@@ -144,8 +144,6 @@ def parse_html(file, def_format):
                     or video_link.startswith("https://")
                 ):
                     continue
-                elif "google" in video_link:
-                    continue
                 videos.append((video_link, def_format, video_name, topic_name, False))
     elif mg_info is not None and len(buttons_soup) != 0:
         videos = []
@@ -158,6 +156,11 @@ def parse_html(file, def_format):
                 br.decompose()
                 video_name = a_soup.previousSibling
                 video_link = a_soup.get_text(strip=True)
+                if not (
+                    video_link.startswith("http://")
+                    or video_link.startswith("https://")
+                ):
+                    continue
                 videos.append((video_link, def_format, video_name, topic_name, False))
     elif mg_info is not None and paras_soup[0].b is not None:
         videos = []
@@ -170,6 +173,11 @@ def parse_html(file, def_format):
                     br.decompose()
                     video_name = a_soup.previousSibling
                     video_link = a_soup.get_text(strip=True)
+                    if not (
+                        video_link.startswith("http://")
+                        or video_link.startswith("https://")
+                    ):
+                        continue
                     videos.append(
                         (video_link, def_format, video_name, topic_name, False)
                     )
@@ -184,6 +192,11 @@ def parse_html(file, def_format):
         for para in paras_soup:
             video_name = para.contents[0]
             video_link = para.select_one("a").get_text(strip=True)
+            if not (
+                video_link.startswith("http://")
+                or video_link.startswith("https://")
+            ):
+                continue
             videos.append((video_link, def_format, video_name, topic_name, False))
     else:
         videos = []
@@ -191,6 +204,11 @@ def parse_html(file, def_format):
         video_name = ""
         for a_soup in soup.select("a"):
             video_link = a_soup.get("href")
+            if not (
+                video_link.startswith("http://")
+                or video_link.startswith("https://")
+            ):
+                continue
             videos.append((video_link, def_format, video_name, topic_name, False))
 
     return videos
