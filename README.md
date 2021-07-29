@@ -2,6 +2,7 @@
 Download videos from various websites using this telegram bot
 
 ### Local
+- Make sure python3 ffmpeg aria2 are installed
 ```sh
     git clone https://github.com/DaruaraFriends/VideoDownloaderBot
     cp sample.env .env
@@ -22,11 +23,36 @@ Add ffmpeg buildpack https://elements.heroku.com/buildpacks/jonathanong/heroku-b
 Add aria2 buildpack https://elements.heroku.com/buildpacks/amivin/aria2-heroku
 
 #### Docker
-Follow this to deploy using the heroku.yml https://devcenter.heroku.com/articles/build-docker-images-heroku-yml
+- Make sure heroku-cli is installed
+```sh
+    heroku login
+    git clone https://github.com/DaruaraFriends/VideoDownloaderBot
+    heroku stack:set container
+    git push heroku main
+```
+Help: https://devcenter.heroku.com/articles/build-docker-images-heroku-yml
 
 Add all environment vars either from cli or heroku settings
 
-## Docker
+## Docker (Easiest)
+- Make sure docker is installed and running
+```sh
+    # Create ~/vdb.env file with appropriate values.
+    docker run -d --restart=always --env-file ~/vdb.env deshdeepak1/video_downloader_bot:latest
+```
+
+#### Manually
+- Make sure docker is installed and running
+```sh
+    git clone https://github.com/DaruaraFriends/VideoDownloaderBot
+    docker build -t vdb .
+    cp sample.env .env
+    # Change values in .env
+    docker run -d --restart=always --env-file .env vdb
+```
+
+
+
 
 
 

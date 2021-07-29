@@ -146,6 +146,10 @@ def parse_html(file, def_format):
                     or video_link.startswith("https://")
                 ):
                     continue
+
+
+
+
                 videos.append((video_link, def_format, video_name, topic_name, False))
     elif mg_info is not None and len(buttons_soup) != 0:
         videos = []
@@ -333,6 +337,13 @@ def download_video(message, video):
     title = video[2]
     topic = video[3]
     quote = video[4]
+
+    if "magnetoscript" in link and ("brightcove" in link or len(link.split("/")[-1]) == 13):
+        vid_id = link[-13:]
+        link = f"https://player.deshdeepak.me/{vid_id}"
+    elif "magnetoscript" in link and "jwp" in link:
+        vid_id = link[-8:]
+        link = f"https://player.deshdeepak.me/{vid_id}"
 
     if not vid_format.isnumeric():
         title = vid_format
