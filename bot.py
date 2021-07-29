@@ -75,7 +75,7 @@ async def query_same_user_filter_func(_, __, query):
 
 async def query_document_filter_func(_, __, query):
     msg = query.message.reply_to_message
-    msg = await __.get_messages(msg.chat.id,msg.message_id)
+    msg = await __.get_messages(msg.chat.id, msg.message_id)
     if msg.document is not None:
         return True
     elif msg.reply_to_message is not None:
@@ -116,25 +116,81 @@ async def send_video(message, path, caption, quote, filename):
         # file_name=filename
     )
 
+
 def parse_html(file, def_format):
     with open(file, "r") as f:
         source = f.read()
 
     soup = BeautifulSoup(source, "html.parser")
 
-    all_videos_soup = soup.select_one("div#videos")
-    topics_soup = all_videos_soup.select("div.topic")
-    videos = []
-    for topic_soup in  topics_soup:
-        topic_name = topic_soup.select_one("span.topic_name").get_text(strip=True)
-        videos_soup = topic_soup.select("p.video")
-        for video_soup in videos_soup:
-            video_name = video_soup.select_one("span.video_name").get_text(strip=True)
-            video_link = video_soup.select_one("a").get_text(strip=True)
-            if not (video_link.startswith("http://") or video_link.startswith("https://")):
+    info = soup.select_one("p#info")
+    mg_info = soup.select_one("p[style='text-align:center;font-size:30;color:Blue']")
+    buttons_soup = soup.select("button.collapsible")
+    paras_soup = soup.select("p")[2:]
+    if info is not None:
+        all_videos_soup = soup.select_one("div#videos")
+        topics_soup = all_videos_soup.select("div.topic")
+        videos = []
+        for topic_soup in topics_soup:
+            topic_name = topic_soup.select_one("span.topic_name").get_text(strip=True)
+            videos_soup = topic_soup.select("p.video")
+            for video_soup in videos_soup:
+                video_name = video_soup.select_one("span.video_name").get_text(
+                    strip=True
+                )
+                video_link = video_soup.select_one("a").get_text(strip=True)
+                if not (
+                    video_link.startswith("http://")
+                    or video_link.startswith("https://")
+                ):
                     continue
-            elif 'google' in video_link:
+                elif "google" in video_link:
+                    continue
+                videos.append((video_link, def_format, video_name, topic_name, False))
+    elif mg_info is not None and len(buttons_soup) != 0:
+        videos = []
+        for button_soup in buttons_soup:
+            topic_name = button_soup.get_text(strip=True).strip("Topic :- ")
+            para = button_soup.find_next_sibling("div", class_="content").p
+            # ps = [para.contents[i] for i in range(0,len(para)) if i%5==0 ]
+            for a_soup in para.select("a"):
+                br = a_soup.find_previous_sibling()
+                br.decompose()
+                video_name = a_soup.previousSibling
+                video_link = a_soup.get_text(strip=True)
+                videos.append((video_link, def_format, video_name, topic_name, False))
+    elif mg_info is not None and paras_soup[0].b is not None:
+        videos = []
+        for topic_para in paras_soup:
+            if paras_soup.index(topic_para) % 2 == 0:
+                topic_name = topic_para.get_text(strip=True).strip("Topic :- ")
+                para = topic_para.find_next_sibling("p")
+                for a_soup in para.select("a"):
+                    br = a_soup.find_previous_sibling()
+                    br.decompose()
+                    video_name = a_soup.previousSibling
+                    video_link = a_soup.get_text(strip=True)
+                    videos.append(
+                        (video_link, def_format, video_name, topic_name, False)
+                    )
+            else:
                 continue
+    elif (
+        mg_info is not None
+        and paras_soup[0].get("style") == "text-align:center;font-size:25px;"
+    ):
+        topic_name = ""
+        videos = []
+        for para in paras_soup:
+            video_name = para.contents[0]
+            video_link = para.select_one("a").get_text(strip=True)
+            videos.append((video_link, def_format, video_name, topic_name, False))
+    else:
+        videos = []
+        topic_name = ""
+        video_name = ""
+        for a_soup in soup.select("a"):
+            video_link = a_soup.get("href")
             videos.append((video_link, def_format, video_name, topic_name, False))
 
     return videos
@@ -143,7 +199,7 @@ def parse_html(file, def_format):
 @bot.on_callback_query(query_document & query_same_user)
 async def choose_html_video_format(bot, query):
     msg = query.message.reply_to_message
-    msg = await bot.get_messages(msg.chat.id,msg.message_id)
+    msg = await bot.get_messages(msg.chat.id, msg.message_id)
     only = False
     if msg.document is not None:
         commands = msg.caption.split()
@@ -180,9 +236,9 @@ async def choose_html_video_format(bot, query):
 
     videos = parse_html(file, def_format)
     if only:
-        videos = [videos[start_index-1]]
+        videos = [videos[start_index - 1]]
     else:
-        videos = videos[start_index-1:]
+        videos = videos[start_index - 1 :]
     n = len(videos)
     await msg.reply(f"Downloading!!! {n} videos")
     await download_videos(msg, videos, start_index)
@@ -190,12 +246,12 @@ async def choose_html_video_format(bot, query):
 
 @bot.on_message(
     (
-        (filters.command("download_html") & ~ filters.group)
+        (filters.command("download_html") & ~filters.group)
         | filters.regex(f"^/download_html@{BOT}")
     )
     & (filters.chat(sudo_html_groups) | filters.user(sudo_users))
-    & ( filters.document | filters.reply)
-    )
+    & (filters.document | filters.reply)
+)
 async def download_html(bot, msg):
     if msg.reply_to_message is not None:
         if msg.reply_to_message.document is not None:
@@ -215,8 +271,13 @@ async def download_html(bot, msg):
     soup = BeautifulSoup(source, "html.parser")
 
     info = soup.select_one("p#info")
+    mg_info = soup.select_one("p[style='text-align:center;font-size:30;color:Blue']")
     if info is not None:
         title = soup.select_one("h1#batch").get_text(strip=True)
+    elif mg_info is not None:
+        title = soup.select_one("p").get_text(strip=True)
+    else:
+        title = message.document.file_name
 
     formats = ["144", "240", "360", "480", "720"]
     buttons = []
@@ -230,65 +291,19 @@ async def download_html(bot, msg):
 
 @bot.on_message(
     (
-        (filters.command("download_html") & ~ filters.group)
+        (filters.command("download_html") & ~filters.group)
         | filters.regex(f"^/download_html@{BOT}")
     )
     & (filters.chat(sudo_html_groups) | filters.user(sudo_users))
-    )
+)
 async def download_html_info(bot, message):
     await message.reply(
-            "Send html with command as caption or reply.\n"
-            + "Specify start index separated by space and o if only that index\n"
-            + "e.g. /download_html\n"
-            + "e.g. /download_html 5\n"
-            + "e.g. /download_html 5 o\n"
-            )
-
-
-# @bot.on_callback_query()
-# async def upload(bot, query):
-# message = query.message.reply_to_message
-# format = query.data
-# file = (
-# "./downloads/"
-# + str(message.from_user.id)
-# + "/"
-# + message.document.file_id
-# + ".html"
-# )
-# await message.download(file)
-
-# with open(file, "r") as f:
-# source = f.read()
-
-# soup = BeautifulSoup(source, "html.parser")
-
-# vids = "".join(
-# [
-# str(tag)
-# for tag in soup.find_all("p", style="text-align:center;font-size:25px;")
-# ]
-# )
-# vids_soup = BeautifulSoup(vids, "html.parser")
-# links = [link.extract().text for link in vids_soup.findAll("a")]
-# name = re.compile("\d+\..*?(?=<br/>)")
-# names = name.findall(vids)
-# vids_dict = dict(zip(names, links))
-
-# for vid in vids_dict:
-# vid_name = vid + ".mp4"
-# vid_path = "./downloads/" + str(message.from_user.id) + "/" + vid_name
-# vid_link = vids_dict[vid]
-# command = (
-# "youtube-dl -o '"
-# + vid_path
-# + "' -f 'bestvideo[height="+format+"]+bestaudio' "
-# + vid_link
-# )
-# os.system(command)
-# await message.reply_chat_action("upload_video")
-# await send_video(message, vid_path, vid)
-# os.remove(vid_path)
+        "Send html with command as caption or reply.\n"
+        + "Specify start index separated by space and o if only that index\n"
+        + "e.g. /download_html\n"
+        + "e.g. /download_html 5\n"
+        + "e.g. /download_html 5 o\n"
+    )
 
 
 def download_video(message, video):
@@ -318,9 +333,11 @@ def download_video(message, video):
         if vid_format not in ["144", "240", "360", "480", "720"]:
             vid_format = "360"
         ytf = f"'bestvideo[height<={vid_format}]+bestaudio'"
-    elif ("deshdeepak" in link and len(link.split("/")[-1]) == 8) or (
-        "magnetoscript" in link and "jwp" in link
-    ) or "jwplayer" in link:
+    elif (
+        ("deshdeepak" in link and len(link.split("/")[-1]) == 8)
+        or ("magnetoscript" in link and "jwp" in link)
+        or "jwplayer" in link
+    ):
         if vid_format == "144":
             vid_format = "180"
         elif vid_format == "240":
@@ -334,9 +351,9 @@ def download_video(message, video):
         else:
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
-        if '.mp4' in link:
+        if ".mp4" in link:
             ytf = "'best'"
-        elif '.m3u8' in link:
+        elif ".m3u8" in link:
             ytf = "'best'"
     else:
         ytf = "'best'"
@@ -344,11 +361,17 @@ def download_video(message, video):
     cmd = (
         f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
     )
-    filename = title.replace('/','|').replace('+','_').replace('?',':Q:').replace('*',':S:').replace('#',':H:')
+    filename = (
+        title.replace("/", "|")
+        .replace("+", "_")
+        .replace("?", ":Q:")
+        .replace("*", ":S:")
+        .replace("#", ":H:")
+    )
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
-        caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}\n\nError: {out1}"
+        caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out1}"
         return 1, "", caption, quote, filename
     yt_title, path = out1.split("\n")
     if title == "":
@@ -357,10 +380,10 @@ def download_video(message, video):
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st2, out2 = getstatusoutput(download_cmd)
     if st2 != 0:
-        caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}\n\nError: {out2}"
+        caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out2}"
         return 2, "", caption, quote, filename
     else:
-        filename += '.' + path.split('.')[-1]
+        filename += "." + path.split(".")[-1]
         caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
         return 0, path, caption, quote, filename
 
@@ -412,7 +435,7 @@ async def choose_video_format(bot, query):
 
 @bot.on_message(
     (
-        (filters.command("download_link") & ~ filters.group)
+        (filters.command("download_link") & ~filters.group)
         | filters.regex(f"^/download_link@{BOT}")
     )
     & (filters.chat(sudo_groups) | filters.user(sudo_users))
