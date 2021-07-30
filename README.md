@@ -19,6 +19,9 @@ Download videos from various websites using this telegram bot
     docker run -d --restart=always --env-file .env vdb
 ```
 
+### Colab
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DaruaraFriends/VideoDownloaderBot/blob/main/VideoDoownloaderBot.ipynb)
+
 ### Heroku
 
 #### Easy Way
