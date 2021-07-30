@@ -104,23 +104,34 @@ async def start(bot, message):
 
 async def send_video(message, path, caption, quote, filename):
     global thumb
-    atr = files.get_file_attributes(path)
-    duration = atr[0].duration
-    width = atr[0].w
-    height = atr[0].h
     if thumb == "":
         thumb = files.get_video_thumb(path)
-    await message.reply_video(
-        video=path,
-        caption=caption,
-        duration=duration,
-        width=width,
-        height=height,
-        thumb=thumb,
-        supports_streaming=True,
-        quote=quote,
-        # file_name=filename
-    )
+    try:
+        atr = files.get_file_attributes(path)
+        duration = atr[0].duration
+        width = atr[0].w
+        height = atr[0].h
+        await message.reply_video(
+            video=path,
+            caption=caption,
+            duration=duration,
+            width=width,
+            height=height,
+            thumb=thumb,
+            supports_streaming=True,
+            quote=quote,
+            # file_name=filename
+        )
+    except:
+        await message.reply_video(
+            video=path,
+            caption=caption,
+            thumb=thumb,
+            supports_streaming=True,
+            quote=quote,
+            # file_name=filename
+        )
+
 
 
 def parse_html(file, def_format):
