@@ -1,8 +1,8 @@
 {
-	"name":"VideoDownloaderBot",
-	"description":"Download videos from various websites using this telegram bot",
-	"repository":"https://github.com/DaruaraFriends/VideoDownloaderBot",
-    "buildpacks": [
+    "name":"VideoDownloaderBot",
+    "description":"Download videos from various websites using this telegram bot",
+    "repository":"https://github.com/DaruaraFriends/VideoDownloaderBot",
+    "buildpacks":[
         {
             "url": "https://elements.heroku.com/buildpacks/jonathanong/heroku-buildpack-ffmpeg-latest"
         },
@@ -10,39 +10,39 @@
             "url": "https://elements.heroku.com/buildpacks/amivin/aria2-heroku"
         }
     ],
-	"env": {
-		"API_ID":{
-			"description": "Get your telegram API ID from https://my.telegram.org",
-			"value":""
-		},
-		"API_HASH":{
-			"description":"Get your telegram API HASH from https://my.telegram.org",
-			"value":""
-		},
-		"BOT_TOKEN":{
-			"description":"Get from BotFather",
-			"value":""
-		},
-		"AUTH_USERS":{
-			"description":"Users who can use",
-			"value":""
-		},
-		"GROUPS":{
-			"description":"Groups where to work",
-			"value":""
-		},
-		"HTML_GROUPS":{
-			"description":"Groups where to work for html",
-			"value":""
-		},
-		"THUMB":{
-			"description":"Thumbnail link. Leave empty for using video thumbnail.",
-			"value":"thumb.jpg",
+    "env": {
+        "API_ID":{
+            "description": "Get your telegram API ID from https://my.telegram.org",
+            "value":""
+        },
+        "API_HASH":{
+            "description":"Get your telegram API HASH from https://my.telegram.org",
+		    "value":""
+        },
+        "BOT_TOKEN":{
+            "description":"Get from BotFather",
+            "value":""
+        },
+        "AUTH_USERS":{
+            "description":"Users who can use",
+            "value":""
+        },
+        "GROUPS":{
+            "description":"Groups where to work",
+            "value":""
+        },
+        "HTML_GROUPS":{
+            "description":"Groups where to work for html",
+            "value":""
+        },
+        "THUMB":{
+            "description":"Thumbnail link. Leave empty for using video thumbnail.",
+            "value":"thumb.jpg",
             "required":false
         },
         "NAME":{
-			"description":"Name to send",
-			"value":"TheDarkPrince"
+            "description":"Name to send",
+            "value":"TheDarkPrince"
         }
-	}
+    }
 }
