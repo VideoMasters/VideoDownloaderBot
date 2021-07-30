@@ -34,7 +34,7 @@ sudo_users = auth_users
 
 thumb = os.environ.get("THUMB")
 if thumb.startswith("http://") or thumb.startswith("https://"):
-    getstatusoutput(f"wget '{thumb}' -o 'thumb.jpg'")
+    getstatusoutput(f"wget '{thumb}' -O 'thumb.jpg'")
     thumb = "thumb.jpg"
 
 logging.basicConfig(
