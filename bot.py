@@ -19,15 +19,16 @@ load_dotenv()
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+NAME = os.environ.get("NAME")
 
 bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 with bot:
     BOT = bot.get_me().username.lower()
 
-auth_users = list(eval(os.environ.get("AUTH_USERS")))
-sudo_groups = list(eval(os.environ.get("GROUPS")))
-sudo_html_groups = list(eval(os.environ.get("HTML_GROUPS")))
+auth_users = [ int(chat) for chat in os.environ.get("AUTH_USERS").split(",") if chat != '']
+sudo_groups = [ int(chat) for chat in os.environ.get("GROUPS").split(",")  if chat != '']
+sudo_html_groups = [ int(chat) for chat in os.environ.get("HTML_GROUPS").split(",")  if chat != '']
 sudo_users = auth_users
 
 thumb = os.environ.get("THUMB")
@@ -68,6 +69,8 @@ def exception(logger):
 
 async def query_same_user_filter_func(_, __, query):
     message = query.message.reply_to_message
+    if message.from_user is None:
+        return True
     if query.from_user.id != message.from_user.id:
         await query.answer("❌ Not for you", True)
         return False
@@ -357,16 +360,12 @@ def download_video(message, video):
             ytf = 22
         else:
             ytf = 18
-    elif ("deshdeepak" in link and len(link.split("/")[-1]) == 13) or (
-        "magnetoscript" in link
-        and ("brightcove" in link or len(link.split("/")[-1]) == 13)
-    ):
+    elif ("deshdeepak" in link and len(link.split("/")[-1]) == 13):
         if vid_format not in ["144", "240", "360", "480", "720"]:
             vid_format = "360"
         ytf = f"'bestvideo[height<={vid_format}]+bestaudio'"
     elif (
         ("deshdeepak" in link and len(link.split("/")[-1]) == 8)
-        or ("magnetoscript" in link and "jwp" in link)
         or "jwplayer" in link
     ):
         if vid_format == "144":
@@ -402,7 +401,7 @@ def download_video(message, video):
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
-        caption = f"Can't Download. Probably DRM.\n\nLink: {link}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out1}"
+        caption = f"Can't Download. Probably DRM.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out1}"
         return 1, "", caption, quote, filename
     yt_title, path = out1.split("\n")
     if title == "":
@@ -411,11 +410,11 @@ def download_video(message, video):
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st2, out2 = getstatusoutput(download_cmd)
     if st2 != 0:
-        caption = f"Can't download link.\n\nLink: {link}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out2}"
+        caption = f"Can't download link.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out2}"
         return 2, "", caption, quote, filename
     else:
         filename += "." + path.split(".")[-1]
-        caption = f"Link: {link}\n\nTitle: {title}\n\nTopic: {topic}"
+        caption = f"By: {NAME}\n\nTitle: {title}\n\nTopic: {topic}"
         return 0, path, caption, quote, filename
 
 
@@ -472,19 +471,20 @@ async def choose_video_format(bot, query):
     & (filters.chat(sudo_groups) | filters.user(sudo_users))
 )
 async def download_link(bot, message):
-    user = message.from_user.id
+    print(message)
+    user = message.from_user.id if message.from_user is not None else None
     commands = message.text.split()
     if len(commands) == 1:
         await message.reply(
             "Send video link(s) separated by space, and format separated by | or f at end to choose format (optional) \n\n"
-            + "e.g. /downloadLink https://link1|360 http://link2 http://link3|480 \n"
-            + "e.g. /downloadLink http://link1 http://link2 f\n\n"
+            + "e.g. /download_link https://link1|360 http://link2 http://link3|480 \n"
+            + "e.g. /download_link http://link1 http://link2 f\n\n"
             + "Default format 360p if unspecified.\n"
             + "One link per user at a time."
         )
         return
     if commands[-1] == "f":
-        if user not in sudo_users and len(commands) > 3:
+        if user is not None and user not in sudo_users and len(commands) > 3:
             await message.reply("Not authorized for this action.", quote=True)
             return
         formats = ["144", "240", "360", "480", "720"]
@@ -496,7 +496,7 @@ async def download_link(bot, message):
         buttons_markup = InlineKeyboardMarkup([buttons])
         await message.reply("Choose Format", quote=True, reply_markup=buttons_markup)
     else:
-        if user not in sudo_users and len(commands) > 2:
+        if user is not None and user not in sudo_users and len(commands) > 2:
             await message.reply("Not authorized for this action.", quote=True)
             return
         def_format = "360"

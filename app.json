@@ -2,6 +2,14 @@
 	"name":"VideoDownloaderBot",
 	"description":"Download videos from various websites using this telegram bot",
 	"repository":"https://github.com/DaruaraFriends/VideoDownloaderBot",
+    "buildpacks": [
+        {
+            "url": "https://elements.heroku.com/buildpacks/jonathanong/heroku-buildpack-ffmpeg-latest"
+        },
+        {
+            "url": "https://elements.heroku.com/buildpacks/amivin/aria2-heroku"
+        }
+    ],
 	"env": {
 		"API_ID":{
 			"description": "Get your telegram API ID from https://my.telegram.org",
@@ -29,7 +37,12 @@
 		},
 		"THUMB":{
 			"description":"Thumbnail link. Leave empty for using video thumbnail.",
-			"value":"thumb.jpg"
-		}
+			"value":"thumb.jpg",
+            "required":false
+		},
+        "NAME":{
+			"description":"Name to send",
+			"value":"TheDarkPrince"
+        }
 	}
 }
