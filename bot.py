@@ -471,7 +471,6 @@ async def choose_video_format(bot, query):
     & (filters.chat(sudo_groups) | filters.user(sudo_users))
 )
 async def download_link(bot, message):
-    print(message)
     user = message.from_user.id if message.from_user is not None else None
     commands = message.text.split()
     if len(commands) == 1:
