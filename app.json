@@ -4,10 +4,10 @@
     "repository":"https://github.com/DaruaraFriends/VideoDownloaderBot",
     "buildpacks":[
         {
-            "url": "https://elements.heroku.com/buildpacks/jonathanong/heroku-buildpack-ffmpeg-latest"
+            "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"
         },
         {
-            "url": "https://elements.heroku.com/buildpacks/amivin/aria2-heroku"
+            "url": "https://github.com/amivin/aria2-heroku.git"
         }
     ],
     "env": {
