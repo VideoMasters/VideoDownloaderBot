@@ -37,9 +37,9 @@ if thumb.startswith("http://") or thumb.startswith("https://"):
     thumb = "thumb.jpg"
 
 logging.basicConfig(
-    filename="bot.log",
+    # filename="bot.log",
     format="%(asctime)s:%(levelname)s %(message)s",
-    filemode="w",
+    # filemode="w",
     level=logging.WARNING,
 )
 
