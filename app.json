@@ -39,7 +39,7 @@
 			"description":"Thumbnail link. Leave empty for using video thumbnail.",
 			"value":"thumb.jpg",
             "required":false
-		},
+        },
         "NAME":{
 			"description":"Name to send",
 			"value":"TheDarkPrince"
