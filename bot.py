@@ -3,12 +3,12 @@ import os
 import asyncio
 import logging
 import time
-from dotenv import load_dotenv
-from pyrogram.errors import FloodWait
 from functools import wraps
 from subprocess import getstatusoutput
+from get_video_info import get_video_attributes, get_video_thumb
+from dotenv import load_dotenv
+from pyrogram.errors import FloodWait
 from pyrogram.types.messages_and_media import message
-from telegram_upload import files
 from pyrogram import Client
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -104,15 +104,13 @@ async def start(bot, message):
 
 async def send_video(message, path, caption, quote, filename):
     global thumb
-    if thumb == "":
-        thumb_to_send = files.get_video_thumb(path)
-    else:
-        thumb_to_send = thumb
     try:
-        atr = files.get_file_attributes(path)
-        duration = atr[0].duration
-        width = atr[0].w
-        height = atr[0].h
+        duration, width, height = get_video_attributes(path)
+        if thumb == "":
+            thumb_to_send = get_video_thumb(path)
+        else:
+            thumb_to_send = thumb
+
         await message.reply_video(
             video=path,
             caption=caption,
@@ -125,11 +123,11 @@ async def send_video(message, path, caption, quote, filename):
             # file_name=filename
         )
     except:
-        logger.exception("Error fetching attributes")
+        logger.exception("Error fetching attributes or thumbnail")
         await message.reply_video(
             video=path,
             caption=caption,
-            thumb=thumb,
+            thumb="thumb.jpg",
             supports_streaming=True,
             quote=quote,
             # file_name=filename
@@ -362,11 +360,11 @@ def download_video(message, video):
     elif "magnetoscript" in link and "jwp" in link:
         vid_id = link[-8:]
         link = f"https://player.deshdeepak.me/{vid_id}"
-    elif "jwplayer" in link and '.m3u8' in link:
-        vid_id = link.strip(".m3u8").split("/")[-1]
+    elif "jwplayer" in link and link.endswith('.m3u8'):
+        vid_id = link.removesuffix(".m3u8").split("/")[-1]
         link = f"https://player.deshdeepak.me/{vid_id}"
-    elif "jwplayer" in link and '.mp4' in link:
-        vid_id = link.strip('.mp4').split('/')[-1].split('-')[0]
+    elif "jwplayer" in link and link.endswith('.mp4'):
+        vid_id = link.removesuffix('.mp4').split('/')[-1].split('-')[0]
         link = f"https://player.deshdeepak.me/{vid_id}"
 
     if not vid_format.isnumeric():
