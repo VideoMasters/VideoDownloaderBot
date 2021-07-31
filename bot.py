@@ -105,7 +105,9 @@ async def start(bot, message):
 async def send_video(message, path, caption, quote, filename):
     global thumb
     if thumb == "":
-        thumb = files.get_video_thumb(path)
+        thumb_to_send = files.get_video_thumb(path)
+    else:
+        thumb_to_send = thumb
     try:
         atr = files.get_file_attributes(path)
         duration = atr[0].duration
@@ -117,12 +119,13 @@ async def send_video(message, path, caption, quote, filename):
             duration=duration,
             width=width,
             height=height,
-            thumb=thumb,
+            thumb=thumb_to_send,
             supports_streaming=True,
             quote=quote,
             # file_name=filename
         )
     except:
+        logger.exception("Error fetching attributes")
         await message.reply_video(
             video=path,
             caption=caption,
@@ -359,6 +362,12 @@ def download_video(message, video):
     elif "magnetoscript" in link and "jwp" in link:
         vid_id = link[-8:]
         link = f"https://player.deshdeepak.me/{vid_id}"
+    elif "jwplayer" in link and '.m3u8' in link:
+        vid_id = link.strip(".m3u8").split("/")[-1]
+        link = f"https://player.deshdeepak.me/{vid_id}"
+    elif "jwplayer" in link and '.mp4' in link:
+        vid_id = link.strip('.mp4').split('/')[-1].split('-')[0]
+        link = f"https://player.deshdeepak.me/{vid_id}"
 
     if not vid_format.isnumeric():
         title = vid_format
@@ -376,10 +385,7 @@ def download_video(message, video):
         if vid_format not in ["144", "240", "360", "480", "720"]:
             vid_format = "360"
         ytf = f"'bestvideo[height<={vid_format}]+bestaudio'"
-    elif (
-        ("deshdeepak" in link and len(link.split("/")[-1]) == 8)
-        or "jwplayer" in link
-    ):
+    elif ("deshdeepak" in link and len(link.split("/")[-1]) == 8):
         if vid_format == "144":
             vid_format = "180"
         elif vid_format == "240":
@@ -393,10 +399,6 @@ def download_video(message, video):
         else:
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
-        if ".mp4" in link:
-            ytf = "'best'"
-        elif ".m3u8" in link:
-            ytf = "'best'"
     else:
         ytf = "'best'"
 
@@ -413,6 +415,7 @@ def download_video(message, video):
     filename_cmd = f"{cmd} -e --get-filename -R 25"
     st1, out1 = getstatusoutput(filename_cmd)
     if st1 != 0:
+        logger.error(filename_cmd)
         caption = f"Can't Download. Probably DRM.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out1}"
         return 1, "", caption, quote, filename
     yt_title, path = out1.split("\n")
@@ -422,6 +425,7 @@ def download_video(message, video):
     download_cmd = f"{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args 'aria2c: -x 16 -j 32'"
     st2, out2 = getstatusoutput(download_cmd)
     if st2 != 0:
+        logger.error(download_cmd)
         caption = f"Can't download link.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out2}"
         return 2, "", caption, quote, filename
     else:

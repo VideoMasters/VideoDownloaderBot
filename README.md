@@ -7,6 +7,7 @@ Download videos from various websites using this telegram bot
     # Create ~/vdb.env file with appropriate values.
     docker run -d --restart=always --env-file ~/vdb.env deshdeepak1/video_downloader_bot:latest
 ```
+- Try on https://labs.play-with-docker.com/
 
 #### Manually
 - Make sure docker is installed and running
