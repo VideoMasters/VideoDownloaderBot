@@ -100,9 +100,26 @@ query_document = filters.create(query_document_filter_func)
 @bot.on_message(filters.command("start"))
 async def start(bot, message):
     await message.reply("Send video link or html")
+# Time Interval Between Progress Updates Current is 15sec   
+class Timer:        
+    def __init__(self, time_between=15):
+        self.start_time = time.time()
+        self.time_between = time_between
 
+    def can_send(self):
+        if time.time() > (self.start_time + self.time_between):
+            self.start_time = time.time()
+            return True
+        return False
+
+timer = Timer()
 
 async def send_video(message, path, caption, quote, filename):
+    async def progress_bar(current,total):
+        if timer.can_send():
+            await reply.edit(f"{current * 100 / total:.1f}%")
+    reply=await message.reply("Uploading Video")
+    
     global thumb
     try:
         duration, width, height = get_video_attributes(path)
@@ -110,6 +127,7 @@ async def send_video(message, path, caption, quote, filename):
             thumb_to_send = get_video_thumb(path)
         else:
             thumb_to_send = thumb
+        
 
         await message.reply_video(
             video=path,
@@ -119,6 +137,7 @@ async def send_video(message, path, caption, quote, filename):
             height=height,
             thumb=thumb_to_send,
             supports_streaming=True,
+            progress=progress_bar,
             quote=quote,
             # file_name=filename
         )
@@ -129,9 +148,12 @@ async def send_video(message, path, caption, quote, filename):
             caption=caption,
             thumb="thumb.jpg",
             supports_streaming=True,
+            progress=progress_bar,
             quote=quote,
             # file_name=filename
         )
+# def progress(current, total):  #To view Progress in Local or Logger
+#     print(f"{current * 100 / total:.1f}%")
 
 
 
