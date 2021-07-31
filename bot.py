@@ -345,6 +345,18 @@ async def download_html_info(bot, message):
         + "e.g. /download_html 5 o\n"
     )
 
+def is_vimeo(link):
+    webpage_cmd = f"curl -s '{link}'"
+    st_web, webpage = getstatusoutput(webpage_cmd)
+
+    vimeo_urls = []
+    for match in re.finditer(
+            r'<iframe[^>]+?src=(["\'])(?P<url>(?:https?:)?//player\.vimeo\.com/video/\d+.*?)\1',
+            webpage):
+        vimeo_urls.append(match)
+
+    return len(vimeo_urls) == 1
+
 
 def download_video(message, video):
     chat = message.chat.id
@@ -397,6 +409,19 @@ def download_video(message, video):
         else:
             vid_format = "360"
         ytf = f"'best[height<={vid_format}]'"
+    elif is_vimeo(link):
+        if vid_format == "144":
+            ytf= "'http-240p'"
+        elif vid_format == "240":
+            ytf= "'http-240p'"
+        elif vid_format == "360":
+            ytf= "'http-360p'"
+        elif vid_format == "480":
+            ytf= "'http-540p'"
+        elif vid_format == "720":
+            ytf= "'http-720p'"
+        else:
+            ytf = "'http-360p'"
     else:
         ytf = "'best'"
 
