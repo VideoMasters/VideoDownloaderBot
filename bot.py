@@ -100,9 +100,11 @@ query_document = filters.create(query_document_filter_func)
 @bot.on_message(filters.command("start"))
 async def start(bot, message):
     await message.reply("Send video link or html")
-# Time Interval Between Progress Updates Current is 15sec   
-class Timer:        
-    def __init__(self, time_between=15):
+    
+    
+class Timer:
+    # Time Interval Between Progress Updates Current is 10sec   
+    def __init__(self, time_between=10):
         self.start_time = time.time()
         self.time_between = time_between
 
@@ -120,7 +122,10 @@ async def send_video(message, path, caption, quote, filename):
     global thumb
     async def progress_bar(current,total):
         if timer.can_send():
-            await reply.edit(f"{current * 100 / total:.1f}%")
+            try:
+                await reply.edit(f"{current * 100 / total:.1f}%")
+            except FloodWait as e:
+                time.sleep(e.x)
     reply=await message.reply("Uploading Video")
     
     try:
@@ -486,7 +491,8 @@ async def download_videos(message, videos, index=1):
             try:
                 await message.reply(caption, quote=quote)
             except FloodWait as e:
-                time.sleep(e.x)
+                time.sleep(e.x+1)
+                await message.reply(caption, quote=quote)
         elif r == 0:
             await send_video(message, path, caption, quote, filename)
             os.remove(path)
