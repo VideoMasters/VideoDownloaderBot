@@ -112,46 +112,44 @@ class Timer:
             return True
         return False
 
+
 timer = Timer()
 
+
 async def send_video(message, path, caption, quote, filename):
+    global thumb
     async def progress_bar(current,total):
         if timer.can_send():
             await reply.edit(f"{current * 100 / total:.1f}%")
     reply=await message.reply("Uploading Video")
     
-    global thumb
     try:
-        duration, width, height = get_video_attributes(path)
         if thumb == "":
             thumb_to_send = get_video_thumb(path)
         else:
             thumb_to_send = thumb
-        
-
-        await message.reply_video(
-            video=path,
-            caption=caption,
-            duration=duration,
-            width=width,
-            height=height,
-            thumb=thumb_to_send,
-            supports_streaming=True,
-            progress=progress_bar,
-            quote=quote,
-            # file_name=filename
-        )
     except:
-        logger.exception("Error fetching attributes or thumbnail")
-        await message.reply_video(
-            video=path,
-            caption=caption,
-            thumb="thumb.jpg",
-            supports_streaming=True,
-            progress=progress_bar,
-            quote=quote,
-            # file_name=filename
-        )
+        logger.exception("Error generating thumbnail")
+        thumb_to_send = "thumb.jpg"
+        
+    try:
+        duration, width, height = get_video_attributes(path)
+    except:
+        logger.exception("Error fetching attributes")
+        duration, width, height = 0   
+        
+    await message.reply_video(
+        video=path,
+        caption=caption,
+        duration=duration,
+        width=width,
+        height=height,
+        thumb=thumb_to_send,
+        supports_streaming=True,
+        progress=progress_bar,
+        quote=quote,
+        # file_name=filename
+    )
 # def progress(current, total):  #To view Progress in Local or Logger
 #     print(f"{current * 100 / total:.1f}%")
 
