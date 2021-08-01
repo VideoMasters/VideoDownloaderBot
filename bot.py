@@ -100,10 +100,10 @@ query_document = filters.create(query_document_filter_func)
 @bot.on_message(filters.command("start"))
 async def start(bot, message):
     await message.reply("Send video link or html")
-    
-    
+
+
 class Timer:
-    # Time Interval Between Progress Updates Current is 10sec   
+    # Time Interval Between Progress Updates Current is 10sec
     def __init__(self, time_between=10):
         self.start_time = time.time()
         self.time_between = time_between
@@ -126,8 +126,8 @@ async def send_video(message, path, caption, quote, filename):
                 await reply.edit(f"{current * 100 / total:.1f}%")
             except FloodWait as e:
                 time.sleep(e.x)
-    reply=await message.reply("Uploading Video")
-    
+    reply = await message.reply("Uploading Video")
+
     try:
         if thumb == "":
             thumb_to_send = get_video_thumb(path)
@@ -136,13 +136,13 @@ async def send_video(message, path, caption, quote, filename):
     except:
         logger.exception("Error generating thumbnail")
         thumb_to_send = "thumb.jpg"
-        
+
     try:
         duration, width, height = get_video_attributes(path)
     except:
         logger.exception("Error fetching attributes")
-        duration, width, height = 0   
-        
+        duration = width = height = 0
+
     await message.reply_video(
         video=path,
         caption=caption,
@@ -155,6 +155,7 @@ async def send_video(message, path, caption, quote, filename):
         quote=quote,
         # file_name=filename
     )
+    reply.delete()
 # def progress(current, total):  #To view Progress in Local or Logger
 #     print(f"{current * 100 / total:.1f}%")
 
