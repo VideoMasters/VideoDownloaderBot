@@ -13,6 +13,7 @@ from pyrogram import Client
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from bs4 import BeautifulSoup
+from p_bar import progress_bar
 
 load_dotenv()
 os.makedirs("./downloads", exist_ok=True)
@@ -99,33 +100,11 @@ query_document = filters.create(query_document_filter_func)
 
 @bot.on_message(filters.command("start"))
 async def start(bot, message):
-    await message.reply("Send video link or html")
-    
-    
-class Timer:
-    # Time Interval Between Progress Updates Current is 10sec   
-    def __init__(self, time_between=10):
-        self.start_time = time.time()
-        self.time_between = time_between
-
-    def can_send(self):
-        if time.time() > (self.start_time + self.time_between):
-            self.start_time = time.time()
-            return True
-        return False
-
-
-timer = Timer()
-
+    await message.reply("Send video link or html")    
 
 async def send_video(message, path, caption, quote, filename):
     global thumb
-    async def progress_bar(current,total):
-        if timer.can_send():
-            try:
-                await reply.edit(f"{current * 100 / total:.1f}%")
-            except FloodWait as e:
-                time.sleep(e.x)
+   
     reply=await message.reply("Uploading Video")
     
     try:
@@ -143,6 +122,7 @@ async def send_video(message, path, caption, quote, filename):
         logger.exception("Error fetching attributes")
         duration, width, height = 0   
         
+    start_time = time.time()  
     await message.reply_video(
         video=path,
         caption=caption,
@@ -152,11 +132,13 @@ async def send_video(message, path, caption, quote, filename):
         thumb=thumb_to_send,
         supports_streaming=True,
         progress=progress_bar,
+        progress_args=(reply,start_time),
         quote=quote,
-        # file_name=filename
-    )
-# def progress(current, total):  #To view Progress in Local or Logger
-#     print(f"{current * 100 / total:.1f}%")
+        # file_name=filename)
+        
+    await reply.delete()
+
+
 
 
 
