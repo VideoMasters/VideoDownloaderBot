@@ -427,7 +427,7 @@ def download_video(message, video):
         ytf = "'best'"
 
     cmd = (
-        f"yt-dlp -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
+        f"yt-dlp --socket-timeout 30 -o './downloads/{chat}/%(id)s.%(ext)s' -f {ytf} --no-warning '{link}'"
     )
     filename = (
         title.replace("/", "|")
