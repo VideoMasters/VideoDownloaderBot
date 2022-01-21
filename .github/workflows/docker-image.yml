@@ -35,7 +35,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: deshdeepak1/video_downloader_bot:latest
+          tags: deshibanda05/video_downloader_bot:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
       -
