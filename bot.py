@@ -131,7 +131,7 @@ async def send_video(bot: Client, message: Message, path, caption, filename, thu
 
 @bot.on_message(
     (
-        (filters.command("download_json") & ~filters.group)
+        (filters.command("download_json"))
         | filters.regex(f"^/download_json@{BOT}")
     )
     & (filters.chat(sudo_json_groups) | filters.user(sudo_users))
@@ -339,7 +339,7 @@ def get_videos(req_videos):
 
 @bot.on_message(
     (
-        (filters.command("download_link") & ~filters.group)
+        (filters.command("download_link"))
         | filters.regex(f"^/download_link@{BOT}")
     )
     & (filters.chat(sudo_groups) | filters.user(sudo_users))
