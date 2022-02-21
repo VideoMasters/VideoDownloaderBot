@@ -65,13 +65,13 @@ Download videos from various websites using this telegram bot
     BOT_TOKEN=123:abc # Get from https://t.me/BotFather
     AUTH_USERS=123,456 # User ids of those who can use bot anywhere without limit
     GROUPS=123,456 # Chat ids where you wan't many to use the bot
-    HTML_GROUPS=123,456 # Chat ids where you wan't many to use the bot to download from htmls
+    JSON_GROUPS=123,456 # Chat ids where you wan't many to use the bot to download from jsons
     THUMB=thumb.jpg # Url of video thumbnail. Leave to use video's thumbnail
     NAME=Deshdeepak # Name to send with video
 ```
 
 ### Instructions
 - /download_link - To download from links
-- /download_html - To download from htmls
-- /download_link@bot_username & /download_html@bot_username - To use in groups
+- /download_json - To download from jsons
+- /download_link@bot_username & /download_json@bot_username - To use in groups
 

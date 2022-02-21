@@ -34,8 +34,8 @@
             "description":"Groups where to work",
             "value":""
         },
-        "HTML_GROUPS":{
-            "description":"Groups where to work for html",
+        "JSON_GROUPS":{
+            "description":"Groups where to work for json",
             "value":""
         },
         "THUMB":{
