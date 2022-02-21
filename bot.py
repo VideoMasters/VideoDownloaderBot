@@ -173,18 +173,22 @@ async def download_json_info(bot: Client, message: Message):
     for topic, vids in videos_dict.items():
         for title, link in vids.items():
             videos.append((link, vid_format, title, topic))
-    if start:
-        videos = videos[int(start) - 1:]
+    req_videos = []
     if req_vids:
-        videos_ = [videos[int(vid) -1] for vid in req_vids]
-        videos = videos_
-    n = len(videos)
+        videos_ = [(int(vid), videos[int(vid) -1]) for vid in req_vids]
+        req_videos += videos_
+    elif not start:
+        start = '1'
+    if start:
+        videos_ = videos[int(start) - 1:]
+        req_videos += enumerate(req_videos, int(start))
+    req_videos = sorted(set(req_videos))
+    n = len(req_videos)
     thumb_ques = "Send custom thumbnail url or N for default or V for video thumbnail."
     thumbnail = await bot.ask(message.chat.id, thumb_ques)
     thumbnail = thumbnail.text
     await message.reply(f"Downloading!!! {n} videos")
-    index = int(start) if start else 1
-    await download_videos(bot, message, videos, thumbnail, index)
+    await download_videos(bot, message, req_videos, thumbnail)
 
 
 def is_vimeo(link):
@@ -252,7 +256,7 @@ def download_video(chat_id, video):
     else:
         ytf = f"b[height<={vid_format}]/bv[height<={vid_format}]+ba"
 
-    ytf = f"{ytf}/b[height<={DEF_FORMAT}]/bv[height<={DEF_FORMAT}]+ba/b"
+    ytf = f"{ytf}/b[height<={DEF_FORMAT}]/bv[height<={DEF_FORMAT}]+ba/b/bv+ba"
 
     cmd = (
         f"yt-dlp --socket-timeout 30 -R 25 --no-warning '{link}'"
@@ -261,7 +265,7 @@ def download_video(chat_id, video):
     st1, yt_title = getstatusoutput(title_cmd)
     if st1 != 0:
         logger.error(title_cmd)
-        caption = f"Can't Download. Probably DRM.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {yt_title}"
+        caption = f"Can't Download. Probably DRM.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {yt_title}\n\nLink: {link}"
         return 1, "", caption, ""
     if title == "":
         title = yt_title
@@ -272,7 +276,7 @@ def download_video(chat_id, video):
     st1, path = getstatusoutput(filename_cmd)
     if st1 != 0:
         logger.error(filename_cmd)
-        caption = f"Can't Download. Probably DRM.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {path}"
+        caption = f"Can't Download. Probably DRM.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {path}\n\nLink: {link}"
         return 1, "", caption, filename
 
 
@@ -280,7 +284,7 @@ def download_video(chat_id, video):
     st2, out2 = getstatusoutput(download_cmd)
     if st2 != 0:
         logger.error(download_cmd)
-        caption = f"Can't download link.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out2}"
+        caption = f"Can't download link.\n\nBy: {NAME}\n\nTitle: {title}\n\nTopic: {topic}\n\nError: {out2}\n\nLink: {link}"
         return 2, "", caption, filename
     else:
         filename += "." + path.split(".")[-1]
@@ -288,15 +292,17 @@ def download_video(chat_id, video):
         return 0, path, caption, filename
 
 
-async def download_videos(bot, message, videos, thumbnail, index=1):
+async def download_videos(bot, message: Message, videos, thumbnail):
     if thumbnail.upper() not in ["V", "N"]:
         thumbnail = requests.get(thumbnail).content
         thumbnail = io.BytesIO(thumbnail)
         thumbnail.name = "thumb.jpg"
-    for video in videos:
+    err_list = []
+    for index, video in videos:
         r, path, caption, filename = download_video(message.chat.id, video)
         caption += f"\n\nIndex: {index}"
         if r in [1, 2]:
+            err_list.append(str(index))
             try:
                 await message.reply(caption)
             except FloodWait as e:
@@ -305,11 +311,11 @@ async def download_videos(bot, message, videos, thumbnail, index=1):
         elif r == 0:
             await send_video(bot, message, path, caption, filename, thumbnail)
             os.remove(path)
-        index += 1
 
     if not isinstance(thumbnail, str):
         thumbnail.close()
     await message.reply("Done.")
+    await message.reply(f"Errors: \n`{'|'.join(err_list)}`", parse_mode="markdown")
 
 
 def get_videos(req_videos):
@@ -335,7 +341,7 @@ def get_videos(req_videos):
         if video_format == "":
             video_format = DEF_FORMAT
         videos.append((video_link, video_format, video_name, video_topic))
-    return videos
+    return list(enumerate(videos, 1))
 
 
 @bot.on_message(
