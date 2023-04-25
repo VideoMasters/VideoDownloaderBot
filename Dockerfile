@@ -1,8 +1,11 @@
-FROM python:3.9.6-alpine3.14
+FROM python:3.10.5-slim-buster
 
-WORKDIR /app
 
+WORKDIR .
+RUN apt -qq update && apt -qq install -y git wget pv jq python3-dev ffmpeg mediainfo aria2
 COPY . .
-RUN apk add --no-cache gcc libffi-dev musl-dev ffmpeg aria2 && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+RUN apt install ffmpeg
+RUN apt install aria2
 
-CMD [ "python", "./bot.py" ]
+CMD ["python3", "bot.py"]
